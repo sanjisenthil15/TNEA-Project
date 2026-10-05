@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendation Results — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+
+<style>
+  :root {
+      --navy: #0f172a;
+      --slate: #1e3a8a;
+      --slate-light: #334155;
+  }
+  .bookmark-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.3rem;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+      padding: 0;
+  }
+  .bookmark-btn:hover {
+      transform: scale(1.1);
+  }
+  .bookmark-btn.active {
+      color: #f59e0b;
+  }
+  .bookmark-btn.active i::before {
+      content: "\f586"; /* bi-star-fill */
+  }
+  .choice-drawer {
+      position: fixed;
+      top: 0;
+      right: -450px;
+      width: 450px;
+      max-width: 100%;
+      height: 100vh;
+      background: white;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+      z-index: 2050;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+  }
+  .choice-drawer.open {
+      right: 0;
+  }
+  .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.6);
+      backdrop-filter: blur(2px);
+      z-index: 2040;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+  }
+  .drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+  }
+  .choice-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      position: relative;
+      cursor: grab;
+  }
+  .choice-item:active {
+      cursor: grabbing;
+  }
+  .remove-choice-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #ef4444;
+      font-size: 1.1rem;
+      padding: 4px;
+      line-height: 1;
+  }
+</style>
+
+{% if current_user and current_user.is_premium %}
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="choice-drawer" id="choiceDrawer">
+    <div class="p-3 text-white d-flex justify-content-between align-items-center" style="background-color: var(--navy);">
+        <h5 class="mb-0 fw-bold" style="font-family:'Outfit', sans-serif;">
+            <i class="bi bi-bookmark-star-fill text-warning me-2"></i>My Choice List
+        </h5>
+        <button class="btn-close btn-close-white" id="closeDrawerBtn" aria-label="Close"></button>
+    </div>
+    <div class="p-3 flex-grow-1 overflow-auto" id="choiceListContainer">
+        <!-- Choices will be injected here via authenticated API -->
+        <div class="text-center text-muted mt-5" id="emptyChoiceState">
+            <i class="bi bi-inbox fs-1 mb-2"></i>
+            <p>Your choice list is empty. Click the star icon on any college to save it here.</p>
+        </div>
+    </div>
+    <div class="p-3 border-top bg-light">
+        <a href="/choice-list" class="btn btn-outline-dark w-100 fw-bold shadow-sm mb-2" style="font-size: 0.85rem;">
+            <i class="bi bi-list-ol me-1"></i>Open Full Choice Manager
+        </a>
+        <button class="btn w-100 fw-bold shadow-sm" id="exportCsvBtn" style="background-color: #10B981; color: white;">
+            <i class="bi bi-filetype-csv me-2"></i>Export TNEA CSV
+        </button>
+        <p class="text-muted text-center mt-2 mb-0" style="font-size: 0.75rem;">Drag and drop items to reorder before exporting.</p>
+    </div>
+</div>
+
+<button class="btn btn-warning rounded-circle shadow-lg position-fixed d-flex align-items-center justify-content-center" 
+        id="openDrawerBtn"
+        style="bottom: 5.5rem; left: 1.5rem; width: 56px; height: 56px; z-index:1039;" 
+        data-bs-toggle="tooltip" title="View My Choice List">
+    <i class="bi bi-list-stars fs-3"></i>
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm border border-2 border-white" 
+          id="choiceCountBadge" style="font-size: 0.75rem;">0</span>
+</button>
+{% else %}
+<!-- Modal for Free Users attempting to use Choice List / Star features -->
+<div class="modal fade" id="premiumChoiceModal" tabindex="-1" aria-labelledby="premiumChoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-stars text-warning fs-4"></i>
+                    <h6 class="modal-title fw-bold mb-0" id="premiumChoiceModalLabel">Premium Feature: TNEA Choice List</h6>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15); color: #D97706;">
+                    <i class="bi bi-bookmark-star-fill fs-2"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Build Your TNEA Preference List</h5>
+                <p class="text-muted small mb-4">
+                    Choice List and Advanced Choice Analysis are available exclusively with ₹200 Premium Access. Save choices, analyze cutoff tiers (Dream, Realistic, Safer), reorder preferences, and export your official TNEA choice filling CSV.
+                </p>
+                <div class="d-flex flex-column gap-2">
+                    <a href="/premium?feature=choice_analysis" class="btn btn-warning fw-bold py-2 shadow-sm">
+                        <i class="bi bi-stars me-1"></i> Unlock Premium Access (₹200)
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Continue Exploring</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="page-wrap results-wrapper">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4 flex-wrap gap-2">
+        <div>
+            <span class="text-uppercase fw-bold text-muted mb-1 d-block" style="font-size:.7rem; letter-spacing:.15em;">
+                Analysis Output
+            </span>
+            <h1 class="h3 fw-bold text-primary mb-0" style="font-family:'Outfit', sans-serif;">
+                College Recommendations
+            </h1>
+        </div>
+        <a href="/planner" class="btn btn-sm btn-portal-outline">
+            <i class="bi bi-arrow-left"></i> Modify Search
+        </a>
+    </div>
+
+    <!-- Summary Stats Panels -->
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <span class="stat-lbl">Your Cutoff</span>
+                <div class="stat-val text-warning">{{ cutoff }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <span class="stat-lbl">Quota Category</span>
+                <div class="stat-val">{{ community }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <span class="stat-lbl">Preferred Branch</span>
+                <div class="stat-val text-truncate" style="font-size: 1rem; max-width:100%;" title="{{ branch }}">{{ branch }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <span class="stat-lbl">Reference Year</span>
+                <div class="stat-val">{{ year }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendation Cards Grid -->
+    {% if recommendations %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="h5 fw-bold text-primary mb-0" style="font-family:'Outfit', sans-serif;">
+            Matching Colleges
+        </h3>
+        <span class="badge bg-primary px-3 py-2 rounded-pill">{{ recommendations|length }} matches found</span>
+    </div>
+
+    <form id="cmpForm" action="/compare" method="GET">
+
+        {% for college in recommendations %}
+
+        {# ── Determine probability colour class ── #}
+        {% if college.probability >= 80 %}
+            {% set pb_class = "bg-success" %}
+        {% elif college.probability >= 50 %}
+            {% set pb_class = "bg-warning" %}
+        {% else %}
+            {% set pb_class = "bg-danger" %}
+        {% endif %}
+
+        {# ── Determine level badge class ── #}
+        {% set lvl = college.recommendation_level | lower %}
+        {% if 'excellent' in lvl %}
+            {% set lvl_cls = 'level-excellent' %}
+        {% elif 'high' in lvl %}
+            {% set lvl_cls = 'level-highly' %}
+        {% elif 'moderate' in lvl %}
+            {% set lvl_cls = 'level-good' %}
+        {% elif 'possible' in lvl %}
+            {% set lvl_cls = 'level-competitive' %}
+        {% else %}
+            {% set lvl_cls = 'level-ambitious' %}
+        {% endif %}
+
+        <div class="rec-card border-0 shadow-sm mb-4" id="card-{{ college.college_code }}" style="border-radius: 8px; overflow: hidden;">
+            <!-- Header bar -->
+            <div class="px-4 py-2.5 d-flex justify-content-between align-items-center border-bottom bg-white flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-secondary border px-2 py-1 fw-bold shadow-sm" style="font-family:'Outfit', sans-serif; font-size: 0.8rem;">Code: {{ college.college_code }}</span>
+                    {% if college.autonomous and college.autonomous|lower == 'yes' %}
+                        <span class="badge bg-white border text-dark px-2 py-1 shadow-sm"><i class="bi bi-award-fill text-muted"></i> Autonomous</span>
+                    {% endif %}
+                </div>
+                <!-- Action Controls: Compare Checkbox + Bookmark -->
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <!-- Compare Checkbox -->
+                    <div class="cmp-check-wrap form-check" 
+                         data-bs-toggle="tooltip" data-bs-placement="top" title="Select for side-by-side comparison" 
+                         onclick="document.getElementById('chk-{{ college.college_code }}').click(); event.stopPropagation();">
+                        <input class="form-check-input cmp-checkbox" type="checkbox" id="chk-{{ college.college_code }}" name="college" value="{{ college.college_code }}" onclick="event.stopPropagation();">
+                        <label class="form-check-label" for="chk-{{ college.college_code }}">Compare</label>
+                    </div>
+
+                    <!-- Bookmark button -->
+                    <button type="button" class="bookmark-btn" 
+                            data-code="{{ college.college_code }}" 
+                            data-name="{{ college.college_name }}" 
+                            data-branch="{{ college.branch_code }}" 
+                            data-district="{{ college.district | replace(' District','') | replace(' district','') | title }}"
+                            data-cutoff="{{ college.cutoff }}"
+                            aria-label="Bookmark">
+                        <i class="bi bi-star"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="rec-card-body position-relative p-4" style="background-color: #f8fafc;">
+
+                <!-- Header block -->
+                <div class="rec-header mb-4">
+                    <span class="text-uppercase fw-bold text-muted" style="font-size:0.7rem; letter-spacing:0.05em;">Code: {{ college.college_code }}</span>
+                    {% if college.recommendation_category == 'Dream' %}
+                        <span class="badge ms-2 text-white" style="background: var(--c-primary); font-size: 0.65rem; padding: 0.3em 0.6em; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Strong Match</span>
+                    {% elif college.recommendation_category == 'Target' %}
+                        <span class="badge ms-2 text-dark" style="background: var(--c-border); font-size: 0.65rem; padding: 0.3em 0.6em; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Realistic Option</span>
+                    {% else %}
+                        <span class="badge ms-2 text-white" style="background: var(--c-muted); font-size: 0.65rem; padding: 0.3em 0.6em; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Safer Option</span>
+                    {% endif %}
+                    <h4 class="rec-college-name fw-bold text-primary mt-1 mb-2">{{ college.college_name }}</h4>
+                    <div class="d-flex flex-wrap gap-x-3 gap-y-1 text-muted" style="font-size:0.82rem;">
+                        <span><i class="bi bi-cpu text-primary me-1"></i><strong>Branch:</strong> {{ college.branch_name }}</span>
+                        <span class="ms-md-3"><i class="bi bi-geo-alt-fill text-danger me-1"></i><strong>District:</strong> {{ college.district | replace(' District','') | replace(' district','') | title }}</span>
+                    </div>
+
+                    <!-- Facility Badges -->
+                    <div class="facility-badges">
+                        {% if college.hostel_boys and college.hostel_boys|lower == 'yes' %}
+                        <span class="fac-badge fac-badge-hostel"><i class="bi bi-house-fill"></i> Boys Hostel</span>
+                        {% endif %}
+                        {% if college.hostel_girls and college.hostel_girls|lower == 'yes' %}
+                        <span class="fac-badge fac-badge-hostel"><i class="bi bi-house-heart-fill"></i> Girls Hostel</span>
+                        {% endif %}
+                        {% if college.transport and college.transport|lower == 'yes' %}
+                        <span class="fac-badge fac-badge-transport"><i class="bi bi-bus-front-fill"></i> Transport</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Contact Links -->
+                    <div class="d-flex flex-wrap gap-2 mt-3 mb-2">
+                        {% if college.phone %}
+                            <a href="tel:{{ college.phone.split(',')[0].strip() }}" class="btn btn-sm btn-outline-secondary rounded-pill fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-telephone-fill text-muted"></i> Call</a>
+                        {% else %}
+                            <span class="btn btn-sm btn-outline-secondary rounded-pill disabled fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-telephone-x text-muted"></i> N/A</span>
+                        {% endif %}
+                        
+                        {% if college.email %}
+                            <a href="mailto:{{ college.email.split(',')[0].strip() }}" class="btn btn-sm btn-outline-secondary rounded-pill fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-envelope-fill text-muted"></i> Email</a>
+                        {% else %}
+                            <span class="btn btn-sm btn-outline-secondary rounded-pill disabled fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-envelope-x text-muted"></i> N/A</span>
+                        {% endif %}
+                        
+                        {% if college.website %}
+                            <a href="{{ college.website if college.website.startswith('http') else 'https://' + college.website }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-globe text-muted"></i> Website</a>
+                        {% else %}
+                            <span class="btn btn-sm btn-outline-secondary rounded-pill disabled fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-globe-x text-muted"></i> N/A</span>
+                        {% endif %}
+                        
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ college.college_name | urlencode }} {{ college.district | urlencode }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-geo-alt-fill text-danger"></i> Map</a>
+                    </div>
+                </div>
+
+                <!-- Probability Section -->
+                <div class="bg-white border rounded p-3 mb-4 shadow-sm w-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-muted" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Admission Likelihood</span>
+                        <h3 class="mb-0 fw-bold text-primary" style="font-family:'Outfit', sans-serif;">{{ college.probability }}%</h3>
+                    </div>
+                    <div class="progress w-100" style="height:8px; border-radius:4px;">
+                        <div class="progress-bar {{ pb_class }}" role="progressbar" style="width:{{ college.probability }}%" aria-valuenow="{{ college.probability }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="rec-stats row g-0 rounded-3 mb-4 text-center border bg-white shadow-sm">
+                    <div class="rec-stat-cell col-6 col-md-2 border-end border-bottom border-md-bottom-0 py-2 px-1">
+                        <span class="cell-lbl" style="font-size:0.65rem; text-transform:uppercase; color:var(--c-muted); display:block; font-weight:700; margin-bottom:2px;">Chance Level</span>
+                        <span class="level-badge {{ lvl_cls }}" style="font-size:0.7rem; padding:0.2em 0.5em; border-radius:4px;">{{ college.recommendation_level }}</span>
+                    </div>
+                    <div class="rec-stat-cell col-6 col-md-2 border-end border-bottom border-md-bottom-0 py-2 px-1">
+                        <span class="cell-lbl" style="font-size:0.65rem; text-transform:uppercase; color:var(--c-muted); display:block; font-weight:700; margin-bottom:2px;">Diff to Latest</span>
+                        {% if college.cutoff_difference >= 0 %}
+                            <span class="cell-val text-success" style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1rem;">+{{ "%.2f"|format(college.cutoff_difference) }}</span>
+                        {% else %}
+                            <span class="cell-val text-danger" style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1rem;">{{ "%.2f"|format(college.cutoff_difference) }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="rec-stat-cell col-6 col-md-2 border-end border-bottom border-md-bottom-0 py-2 px-1"
+                         data-bs-toggle="tooltip" title="Latest Closing Cutoff for this branch">
+                        <span class="cell-lbl" style="font-size:0.65rem; text-transform:uppercase; color:var(--c-muted); display:block; font-weight:700; margin-bottom:2px;">Latest Cutoff</span>
+                        <span class="cell-val" style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--navy); font-size:1rem;">{{ college.cutoff }}</span>
+                    </div>
+                    <div class="rec-stat-cell col-6 col-md-2 border-end py-2 px-1"
+                         data-bs-toggle="tooltip" title="3-Year Average Cutoff (2023-2025)">
+                        <span class="cell-lbl" style="font-size:0.65rem; text-transform:uppercase; color:var(--c-muted); display:block; font-weight:700; margin-bottom:2px;">3-Yr Mean</span>
+                        <span class="cell-val" style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--slate-light); font-size:1rem;">{{ "%.1f"|format(college.mean_cutoff) }}</span>
+                    </div>
+                    <div class="rec-stat-cell col-6 col-md-2 border-end py-2 px-1"
+                         data-bs-toggle="tooltip" title="Standard Deviation across last 3 years">
+                        <span class="cell-lbl" style="font-size:0.65rem; text-transform:uppercase; color:var(--c-muted); display:block; font-weight:700; margin-bottom:2px;">Volatility</span>
+                        <span class="cell-val text-secondary" style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1rem;">±{{ "%.1f"|format(college.volatility) }}</span>
+                    </div>
+                    <div class="rec-stat-cell col-6 col-md-2 py-2 px-1"
+                         data-bs-toggle="tooltip" title="Calibrated admission probability (8% to 94%)">
+                        <span class="cell-lbl" style="font-size:0.65rem; text-transform:uppercase; color:var(--c-muted); display:block; font-weight:700; margin-bottom:2px;">Probability</span>
+                        <span class="cell-val text-primary" style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1rem;">{{ college.probability }}%</span>
+                    </div>
+                </div>
+
+                <!-- Advisor Notes -->
+                <div class="advisor-box border-0 shadow-sm">
+                    <div class="advisor-box-title">
+                        <i class="bi bi-clipboard-data text-muted"></i> Admission Insights
+                    </div>
+                    <ul class="mb-0">
+                        {% for reason in college.ai_reason %}
+                        <li>{{ reason }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="d-flex justify-content-end align-items-center gap-2 pt-3 border-top">
+                    <a href="/trend?college_code={{ college.college_code }}&branch_code={{ college.branch_code }}&community={{ community }}"
+                       class="btn btn-sm btn-outline-secondary"
+                       data-bs-toggle="tooltip" title="Inspect cutoff movement for this college">
+                        <i class="bi bi-graph-up"></i> Cutoff History
+                    </a>
+                    <a href="/college/{{ college.college_code }}" class="btn btn-sm btn-portal"
+                       data-bs-toggle="tooltip" title="View details, website, and location of this college">
+                        <i class="bi bi-arrow-right-short"></i> View Details
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+
+    </form>
+
+    <!-- Sticky Comparison console -->
+    <div class="cmp-sticky-bar d-flex justify-content-between align-items-center shadow-lg" id="cmpBar">
+        <span class="cmp-status">
+            Selected <span class="cmp-count" id="cmpCount">0</span> of {{ '5' if current_user.is_premium else '2' }} colleges
+            <span id="cmpHint" class="ms-2 fw-semibold" style="display:none;"></span>
+        </span>
+        <button type="button" class="btn btn-cmp-go" id="cmpGoBtn" disabled onclick="goCompare()"
+                data-bs-toggle="tooltip" data-bs-placement="top" title="Compare side-by-side metrics">
+            Compare Selected Colleges
+        </button>
+    </div>
+
+    {% endif %}
+
+    <!-- TNEA Counseling Guidance Section -->
+    <div class="card border shadow-sm rounded-3 mt-4 bg-white mb-5">
+        <div class="card-header bg-white text-primary p-4 fw-bold border-bottom d-flex align-items-center gap-2" style="font-family:'Outfit', sans-serif;">
+            <i class="bi bi-book"></i> Choice Filling Strategy
+        </div>
+        <div class="p-4">
+            <h6 class="fw-bold text-primary mb-3">Golden Rules for Choice Filling</h6>
+            <ul class="mb-0 text-muted small" style="line-height: 1.7;">
+                <li><strong>Rule 1:</strong> Place <span class="fw-bold">Strong Match</span> options in choices 1–5. These are ambitious but keep them at the top in case of unexpected slides.</li>
+                <li><strong>Rule 2:</strong> Place <span class="fw-bold">Realistic Options</span> in choices 6–15. These are your most realistic and highly probable options.</li>
+                <li><strong>Rule 3:</strong> Secure <span class="fw-bold">Safer Options</span> at the bottom. These ensure you don't fall out of counselling entirely.</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<!-- Back to top floating button -->
+<button id="backToTop" class="btn btn-portal rounded-circle shadow-lg position-fixed" style="bottom: 5.5rem; right: 1.5rem; width: 44px; height: 44px; display: none; align-items: center; justify-content: center; z-index:1039;" aria-label="Back to top" data-bs-toggle="tooltip" title="Back to top">
+    <i class="bi bi-arrow-up-short fs-4"></i>
+</button>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+
+    /* Tooltips initialization */
+    var tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipEls.forEach(function (el) {
+        new bootstrap.Tooltip(el, { trigger: 'hover' });
+    });
+
+    /* Checkbox selection comparison limit logic */
+    var IS_PREMIUM = {{ 'true' if current_user.is_premium else 'false' }};
+    var MAX      = IS_PREMIUM ? 5 : 2;
+    var selected = [];
+    var countEl  = document.getElementById("cmpCount");
+    var hintEl   = document.getElementById("cmpHint");
+    var goBtn    = document.getElementById("cmpGoBtn");
+    var boxes    = document.querySelectorAll(".cmp-checkbox");
+
+    function updateBar() {
+        var n = selected.length;
+        if(countEl) countEl.textContent = n;
+        if(goBtn) goBtn.disabled = (n < 2 || n > MAX);
+        
+        if (n === 1) {
+            if(hintEl) {
+                hintEl.style.display = "inline";
+                hintEl.textContent   = "Select at least one more college.";
+                hintEl.className     = "ms-2 text-muted fw-normal";
+            }
+        } else {
+            if(hintEl && !hintEl.innerHTML.includes("Upgrade") && !hintEl.textContent.includes("Maximum")) {
+                hintEl.style.display = "none";
+            }
+        }
+    }
+
+    function highlight(code, on) {
+        var card = document.getElementById("card-" + code);
+        if (card) { card.classList.toggle("cmp-selected", on); }
+    }
+
+    boxes.forEach(function (box) {
+        box.addEventListener("change", function () {
+            var code = this.value;
+            if (this.checked) {
+                if (selected.length >= MAX) {
+                    this.checked = false;
+                    if(hintEl) {
+                        hintEl.style.display = "inline";
+                        if (!IS_PREMIUM) {
+                            hintEl.innerHTML = "Free accounts can compare up to 2 colleges. <a href='/premium' class='text-decoration-underline fw-bold text-primary ms-1'>Upgrade to compare up to 5</a>";
+                        } else {
+                            hintEl.textContent = "Maximum of 5 colleges can be compared at once.";
+                        }
+                        hintEl.className     = "ms-2 text-danger fw-semibold";
+                        setTimeout(function () {
+                            if (selected.length < MAX) hintEl.style.display = "none";
+                        }, 4000);
+                    }
+                    return;
+                }
+                selected.push(code);
+                highlight(code, true);
+            } else {
+                selected = selected.filter(function (c) { return c !== code; });
+                highlight(code, false);
+            }
+            updateBar();
+        });
+    });
+
+    window.goCompare = function () {
+        if (selected.length < 2 || selected.length > MAX) return;
+        var query = selected.map(function (c, i) {
+            return "college" + (i + 1) + "=" + encodeURIComponent(c);
+        }).join("&");
+        window.location.href = "/compare?" + query;
+    };
+
+    updateBar();
+
+    /* Back-to-top handler */
+    var btt = document.getElementById("backToTop");
+    if(btt) {
+        window.addEventListener("scroll", function () {
+            if (window.scrollY > 400) {
+                btt.style.display = "flex";
+            } else {
+                btt.style.display = "none";
+            }
+        });
+        btt.addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+
+    /* Bookmarking / User-Specific Choice List Logic */
+    try {
+        localStorage.removeItem('tnea_bookmarks');
+    } catch(e) {}
+
+    var isPremiumUser = {{ 'true' if current_user and current_user.is_premium else 'false' }};
+    var btnList = document.querySelectorAll('.bookmark-btn');
+
+    if (!isPremiumUser) {
+        var modalEl = document.getElementById('premiumChoiceModal');
+        var premiumModal = modalEl ? new bootstrap.Modal(modalEl) : null;
+        btnList.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (premiumModal) {
+                    premiumModal.show();
+                } else {
+                    window.location.href = '/premium?feature=choice_analysis';
+                }
+            });
+        });
+    } else {
+        var userChoices = [];
+        var badgeCount = document.getElementById('choiceCountBadge');
+        var container = document.getElementById('choiceListContainer');
+        var emptyState = document.getElementById('emptyChoiceState');
+        var drawer = document.getElementById('choiceDrawer');
+        var overlay = document.getElementById('drawerOverlay');
+
+        function renderDrawer() {
+            if (badgeCount) badgeCount.innerText = userChoices.length;
+            if (!container || !emptyState) return;
+
+            if (userChoices.length === 0) {
+                emptyState.style.display = 'block';
+                var items = container.querySelectorAll('.choice-item');
+                items.forEach(function(i){ i.remove(); });
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            var items = container.querySelectorAll('.choice-item');
+            items.forEach(function(i){ i.remove(); });
+
+            userChoices.forEach(function(bm, index) {
+                var div = document.createElement('div');
+                div.className = 'choice-item shadow-sm';
+                div.draggable = true;
+                div.dataset.index = index;
+                var displayName = bm.college_name || bm.name || ('College ' + bm.college_code);
+                var branchName = bm.branch_code || bm.branch || '';
+                var cCode = bm.college_code || bm.code || '';
+                var distName = bm.district || '';
+                var refCutoff = bm.ref_cutoff || bm.cutoff || 'N/A';
+
+                div.innerHTML = `
+                    <div class="fw-bold text-primary mb-1 pe-4" style="font-size:0.9rem;">${index + 1}. ${displayName}</div>
+                    <div class="d-flex flex-wrap gap-2 text-muted" style="font-size:0.8rem;">
+                        <span><i class="bi bi-hash"></i> ${cCode}</span>
+                        <span><i class="bi bi-cpu"></i> ${branchName}</span>
+                        ${distName ? `<span><i class="bi bi-geo-alt"></i> ${distName}</span>` : ''}
+                        <span class="text-dark fw-bold ms-auto border rounded px-1">${refCutoff}</span>
+                    </div>
+                    <button class="remove-choice-btn" data-code="${cCode}" data-branch="${branchName}"><i class="bi bi-x-circle-fill"></i></button>
+                `;
+                container.appendChild(div);
+            });
+
+            // Attach remove events
+            container.querySelectorAll('.remove-choice-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    var code = parseInt(this.getAttribute('data-code'));
+                    var branch = this.getAttribute('data-branch');
+                    fetch('/api/choice-list/remove', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ college_code: code, branch_code: branch })
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        userChoices = userChoices.filter(function(b) { 
+                            var bCode = parseInt(b.college_code || b.code);
+                            var bBranch = b.branch_code || b.branch;
+                            return !(bCode === code && bBranch === branch); 
+                        });
+                        renderDrawer();
+                        updateBookmarkButtons();
+                    })
+                    .catch(function(err){ console.error(err); });
+                });
+            });
+
+            initDragAndDrop();
+        }
+
+        function updateBookmarkButtons() {
+            btnList.forEach(function(btn) {
+                var code = parseInt(btn.getAttribute('data-code'));
+                var branch = btn.getAttribute('data-branch');
+                var isBookmarked = userChoices.some(function(b) { 
+                    var bCode = parseInt(b.college_code || b.code);
+                    var bBranch = b.branch_code || b.branch;
+                    return bCode === code && bBranch === branch; 
+                });
+                if (isBookmarked) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Fetch live server choices on load for this authenticated user
+        fetch('/api/choice-list')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.status === 'success' && Array.isArray(data.choices)) {
+                    userChoices = data.choices;
+                    renderDrawer();
+                    updateBookmarkButtons();
+                }
+            })
+            .catch(function(err){ console.error('Error loading choices:', err); });
+
+        btnList.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var code = parseInt(this.getAttribute('data-code'));
+                var name = this.getAttribute('data-name');
+                var branch = this.getAttribute('data-branch');
+                var district = this.getAttribute('data-district');
+                var cutoff = this.getAttribute('data-cutoff');
+
+                var existingIndex = userChoices.findIndex(function(b) { 
+                    var bCode = parseInt(b.college_code || b.code);
+                    var bBranch = b.branch_code || b.branch;
+                    return bCode === code && bBranch === branch; 
+                });
+
+                if (existingIndex > -1) {
+                    userChoices.splice(existingIndex, 1);
+                    this.classList.remove('active');
+                    renderDrawer();
+                    fetch('/api/choice-list/remove', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ college_code: code, branch_code: branch })
+                    }).catch(function(err){});
+                } else {
+                    userChoices.push({ college_code: code, college_name: name, branch_code: branch, district: district, cutoff: cutoff });
+                    this.classList.add('active');
+                    renderDrawer();
+                    fetch('/api/choice-list/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ college_code: code, branch_code: branch })
+                    }).catch(function(err){});
+
+                    if (drawer && !drawer.classList.contains('open')) {
+                        var openBtn = document.getElementById('openDrawerBtn');
+                        if (openBtn) openBtn.click();
+                        setTimeout(function(){
+                            var closeBtn = document.getElementById('closeDrawerBtn');
+                            if (closeBtn) closeBtn.click();
+                        }, 1500);
+                    }
+                }
+            });
+        });
+
+        // Drawer toggle listeners
+        var openDrawerBtn = document.getElementById('openDrawerBtn');
+        if (openDrawerBtn) {
+            openDrawerBtn.addEventListener('click', function() {
+                if (drawer) drawer.classList.add('open');
+                if (overlay) overlay.classList.add('open');
+            });
+        }
+
+        var closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        if (closeDrawerBtn) {
+            closeDrawerBtn.addEventListener('click', function() {
+                if (drawer) drawer.classList.remove('open');
+                if (overlay) overlay.classList.remove('open');
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                if (drawer) drawer.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+        }
+
+        /* Drag and Drop logic for sorting */
+        var dragSrcEl = null;
+        function initDragAndDrop() {
+            if (!container) return;
+            var items = container.querySelectorAll('.choice-item');
+            items.forEach(function(item) {
+                item.addEventListener('dragstart', handleDragStart, false);
+                item.addEventListener('dragover', handleDragOver, false);
+                item.addEventListener('drop', handleDrop, false);
+                item.addEventListener('dragend', handleDragEnd, false);
+            });
+        }
+
+        function handleDragStart(e) {
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.index);
+            this.style.opacity = '0.5';
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) { e.preventDefault(); }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) { e.stopPropagation(); }
+            if (dragSrcEl !== this) {
+                var srcIndex = parseInt(dragSrcEl.dataset.index);
+                var destIndex = parseInt(this.dataset.index);
+
+                var temp = userChoices[srcIndex];
+                userChoices.splice(srcIndex, 1);
+                userChoices.splice(destIndex, 0, temp);
+
+                renderDrawer();
+
+                var itemsToSave = userChoices.map(function(c) {
+                    return {
+                        college_code: c.college_code || c.code,
+                        branch_code: c.branch_code || c.branch
+                    };
+                });
+                fetch('/api/choice-list/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: itemsToSave })
+                }).catch(function(err){});
+            }
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+        }
+
+        /* CSV Export */
+        var exportCsvBtn = document.getElementById('exportCsvBtn');
+        if (exportCsvBtn) {
+            exportCsvBtn.addEventListener('click', function() {
+                if (userChoices.length === 0) {
+                    alert('Your choice list is empty. Add some colleges first!');
+                    return;
+                }
+
+                var csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Choice_Order,College_Code,College_Name,Branch_Code,District,Ref_Cutoff\n";
+
+                userChoices.forEach(function(b, index) {
+                    var order = index + 1;
+                    var cName = (b.college_name || b.name || '').replace(/"/g, '""');
+                    var cCode = b.college_code || b.code;
+                    var bBranch = b.branch_code || b.branch;
+                    var dist = (b.district || '').replace(/"/g, '""');
+                    var cOff = b.ref_cutoff || b.cutoff || 'N/A';
+                    var row = [order, cCode, '"' + cName + '"', bBranch, '"' + dist + '"', cOff].join(",");
+                    csvContent += row + "\n";
+                });
+
+                var encodedUri = encodeURI(csvContent);
+                var link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "TNEA_Choice_List.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+    }
+
+}());
+</script>
+{% endblock %}

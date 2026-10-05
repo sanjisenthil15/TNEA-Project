@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Search Colleges — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+
+<div class="page-wrap">
+
+    <!-- Page Header -->
+    <div class="border-bottom pb-3 mb-4">
+        <span class="text-uppercase fw-bold text-muted mb-1 d-block" style="font-size:.7rem; letter-spacing:.15em;">
+            Database Query
+        </span>
+        <h1 class="h3 fw-bold text-primary mb-0" style="font-family:'Outfit', sans-serif;">
+            Explore Engineering Colleges
+        </h1>
+        <p style="font-size:.875rem; color:var(--c-muted); margin:0;">
+            Search by college name, code, taluk, or district. Adjust facility filters below.
+        </p>
+    </div>
+
+    <!-- Search Controls & Filters -->
+    <div class="card border-0 shadow-sm p-4 rounded-4 mb-4 bg-white">
+        <form method="GET" action="/search" id="searchForm">
+            
+            <!-- Search inputs row -->
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <label class="form-section-label" for="searchQuery">Search keyword</label>
+                    <div class="position-relative">
+                        <input type="text" 
+                               id="searchQuery" 
+                               name="q" 
+                               class="portal-input ps-5" 
+                               placeholder="Enter college name, code, district, or taluk..." 
+                               value="{{ query or '' }}">
+                        <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
+                    </div>
+                </div>
+
+                <!-- District Filter -->
+                <div class="col-md-6 col-lg-4">
+                    <label class="form-section-label" for="districtFilter">District</label>
+                    <div class="select-wrap">
+                        <select class="portal-select" id="districtFilter" name="district">
+                            <option value="">All Districts (No Filter)</option>
+                            {% for d in districts %}
+                            <option value="{{ d }}" {% if d == district %}selected{% endif %}>{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Facility Filters -->
+                <div class="col-6 col-md-4 col-lg-3">
+                    <label class="form-section-label" for="autonomousFilter">Autonomous Status</label>
+                    <div class="select-wrap">
+                        <select class="portal-select" id="autonomousFilter" name="autonomous">
+                            <option value="">All Statuses</option>
+                            <option value="yes" {% if autonomous == 'yes' %}selected{% endif %}>Autonomous Only</option>
+                            <option value="no" {% if autonomous == 'no' %}selected{% endif %}>Non-Autonomous Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3">
+                    <label class="form-section-label" for="hostelFilter">Hostel Accomodation</label>
+                    <div class="select-wrap">
+                        <select class="portal-select" id="hostelFilter" name="hostel">
+                            <option value="">All Statuses</option>
+                            <option value="yes" {% if hostel == 'yes' %}selected{% endif %}>Hostel Available</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3">
+                    <label class="form-section-label" for="transportFilter">Bus/Transport</label>
+                    <div class="select-wrap">
+                        <select class="portal-select" id="transportFilter" name="transport">
+                            <option value="">All Statuses</option>
+                            <option value="yes" {% if transport == 'yes' %}selected{% endif %}>Transport Available</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-12 col-lg-3 d-flex align-items-end">
+                    <button type="submit" class="btn-submit-full" style="padding: 0.72rem;">
+                        <i class="bi bi-search"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Active Filters Badge Strip -->
+    {% if query or district or autonomous or hostel == 'yes' or transport == 'yes' %}
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+        <span class="text-muted fw-bold" style="font-size:0.75rem;">Active filters:</span>
+        {% if query %}
+        <span class="badge bg-secondary px-3 py-2 text-dark" style="background:#E2E8F0 !important;"><i class="bi bi-search me-1"></i> "{{ query }}"</span>
+        {% endif %}
+        {% if district %}
+        <span class="badge bg-secondary px-3 py-2 text-dark" style="background:#E2E8F0 !important;"><i class="bi bi-geo-alt me-1"></i> {{ district }}</span>
+        {% endif %}
+        {% if autonomous %}
+        <span class="badge bg-secondary px-3 py-2 text-dark" style="background:#E2E8F0 !important;"><i class="bi bi-award me-1"></i> {{ autonomous|upper }} Autonomous</span>
+        {% endif %}
+        {% if hostel == 'yes' %}
+        <span class="badge bg-secondary px-3 py-2 text-dark" style="background:#E2E8F0 !important;"><i class="bi bi-house me-1"></i> Hostel</span>
+        {% endif %}
+        {% if transport == 'yes' %}
+        <span class="badge bg-secondary px-3 py-2 text-dark" style="background:#E2E8F0 !important;"><i class="bi bi-bus-front me-1"></i> Transport</span>
+        {% endif %}
+        <a href="/search" class="btn btn-link btn-sm text-decoration-none text-danger fw-bold ms-auto" style="font-size:0.8rem;">
+            Clear Filters <i class="bi bi-x-circle-fill"></i>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- College Listing Grid -->
+    {% if results %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 fw-bold text-primary mb-0" style="font-family:'Outfit', sans-serif;">Search Results</h3>
+        <span class="text-muted small fw-semibold">Showing {{ total }} institutions</span>
+    </div>
+
+    <div class="row g-4" id="collegeGrid">
+        {% for college in results %}
+        <div class="col-md-6 col-lg-4">
+            <div class="college-card shadow-sm border-0 bg-white">
+
+                <div class="college-card-header">
+                    <span class="college-code-badge">Code: {{ college.college_code }}</span>
+                    <h4 class="college-card-name">{{ college.college_name or 'Name Not Available' }}</h4>
+                    <div class="college-card-location">
+                        <i class="bi bi-geo-alt-fill text-danger"></i>
+                        <span>
+                            {%- set dist_clean = (college.district or '') | replace(' District','') | replace(' district','') | title -%}
+                            {{ dist_clean if dist_clean else 'District N/A' }}
+                            {%- if college.taluk %}, {{ college.taluk | title }}{% endif %}
+                        </span>
+                    </div>
+                    {% if college.address %}
+                    <div class="college-card-address">
+                        <i class="bi bi-building me-1"></i>
+                        {{ college.address | truncate(65, true, '…') }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="college-card-meta">
+                    {% set av = (college.autonomous or '') | lower %}
+                    <span class="meta-badge {{ 'yes' if av == 'yes' else ('no' if av == 'no' else 'na') }}">
+                        <i class="bi bi-award-fill"></i> Autonomous: {{ college.autonomous or 'N/A' }}
+                    </span>
+                    {% set bh = (college.hostel_boys or '') | lower %}
+                    <span class="meta-badge {{ 'yes' if bh == 'yes' else ('no' if bh == 'no' else 'na') }}">
+                        <i class="bi bi-house-fill"></i> Boys Hostel: {{ college.hostel_boys or 'N/A' }}
+                    </span>
+                    {% set gh = (college.hostel_girls or '') | lower %}
+                    <span class="meta-badge {{ 'yes' if gh == 'yes' else ('no' if gh == 'no' else 'na') }}">
+                        <i class="bi bi-house-heart-fill"></i> Girls Hostel: {{ college.hostel_girls or 'N/A' }}
+                    </span>
+                    {% set tr = (college.transport or '') | lower %}
+                    <span class="meta-badge {{ 'yes' if tr == 'yes' else ('no' if tr == 'no' else 'na') }}">
+                        <i class="bi bi-bus-front-fill"></i> Transport: {{ college.transport or 'N/A' }}
+                    </span>
+                </div>
+
+                <div class="college-card-actions">
+                    <a href="/college/{{ college.college_code }}" class="btn-view d-flex align-items-center justify-content-center gap-1">
+                        <i class="bi bi-eye"></i> View Details
+                    </a>
+                    <button
+                        class="btn-compare-card d-flex align-items-center justify-content-center gap-1"
+                        data-code="{{ college.college_code }}"
+                        data-name="{{ college.college_name or 'College ' ~ college.college_code }}"
+                        onclick="toggleCompare(this)"
+                    >
+                        <i class="bi bi-plus-circle"></i> Compare
+                    </button>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card border shadow-sm rounded-4 text-center py-5 px-4 bg-white">
+        <div class="fs-1 text-muted mb-3"><i class="bi bi-search"></i></div>
+        <h4 class="fw-bold text-primary">No Colleges Found</h4>
+        <p class="text-muted max-width-md mx-auto mb-4" style="font-size:0.9rem;">
+            No institutions matched your keywords or filters. Adjust your keywords or search query.
+        </p>
+        <a href="/search" class="btn btn-portal mx-auto">Reset Filters</a>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Compare Sticky Bar -->
+<div class="cmp-sticky-bar d-flex justify-content-between align-items-center shadow-lg" id="compareBar" style="display: none !important;">
+    <span class="cmp-status">
+        <i class="bi bi-intersect"></i> Selected <span class="cmp-count" id="compareCount">0</span> of {{ '5' if current_user.is_premium else '2' }} colleges
+        <span id="compareHint" class="ms-2 fw-semibold" style="display:none;"></span>
+    </span>
+    <button type="button" class="btn btn-cmp-go" id="compareGoBtn" disabled onclick="goCompareSearch()"
+            data-bs-toggle="tooltip" data-bs-placement="top" title="Compare side-by-side metrics">
+        <i class="bi bi-intersect"></i> Compare Selected
+    </button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+
+    /* Tooltips initialization */
+    var tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipEls.forEach(function (el) {
+        new bootstrap.Tooltip(el, { trigger: 'hover' });
+    });
+
+    /* Sticky compare bar logic for Search page */
+    var IS_PREMIUM = {{ 'true' if current_user.is_premium else 'false' }};
+    var MAX = IS_PREMIUM ? 5 : 2;
+    var selected = [];
+    var bar = document.getElementById("compareBar");
+    var countEl = document.getElementById("compareCount");
+    var hintEl = document.getElementById("compareHint");
+    var goBtn = document.getElementById("compareGoBtn");
+
+    window.toggleCompare = function (btn) {
+        var code = btn.getAttribute("data-code");
+        var name = btn.getAttribute("data-name");
+
+        if (selected.includes(code)) {
+            selected = selected.filter(function (c) { return c !== code; });
+            btn.innerHTML = "<i class='bi bi-plus-circle'></i> Compare";
+            btn.classList.remove("btn-primary");
+            btn.style.background = "";
+            btn.style.color = "";
+        } else {
+            if (selected.length >= MAX) {
+                if (hintEl) {
+                    hintEl.style.display = "inline";
+                    if (!IS_PREMIUM) {
+                        hintEl.innerHTML = "Free accounts can compare up to 2 colleges. <a href='/premium' class='text-decoration-underline fw-bold text-primary ms-1'>Upgrade to compare up to 5</a>";
+                    } else {
+                        hintEl.textContent = "Maximum of 5 colleges can be compared at once.";
+                    }
+                    hintEl.className = "ms-2 text-danger fw-semibold";
+                    setTimeout(function () {
+                        if (selected.length < MAX) hintEl.style.display = "none";
+                    }, 4000);
+                }
+                return;
+            }
+            selected.push(code);
+            btn.innerHTML = "<i class='bi bi-check-circle-fill'></i> Selected";
+            btn.style.background = "var(--c-primary)";
+            btn.style.color = "#fff";
+        }
+
+        updateBar();
+    };
+
+    function updateBar() {
+        var n = selected.length;
+        if (n > 0) {
+            bar.setAttribute("style", "display: flex !important;");
+        } else {
+            bar.setAttribute("style", "display: none !important;");
+        }
+
+        if (countEl) countEl.textContent = n;
+        if (goBtn) goBtn.disabled = (n < 2 || n > MAX);
+
+        if (n === 1) {
+            if (hintEl) {
+                hintEl.style.display = "inline";
+                hintEl.textContent = "Select at least 1 more college.";
+                hintEl.className = "ms-2 text-muted fw-normal";
+            }
+        } else {
+            if (hintEl && !hintEl.innerHTML.includes("Upgrade") && !hintEl.textContent.includes("Maximum")) {
+                hintEl.style.display = "none";
+            }
+        }
+    }
+
+    window.goCompareSearch = function () {
+        if (selected.length < 2 || selected.length > MAX) return;
+        var query = selected.map(function (c, i) {
+            return "college" + (i + 1) + "=" + encodeURIComponent(c);
+        }).join("&");
+        window.location.href = "/compare?" + query;
+    };
+}());
+</script>
+{% endblock %}

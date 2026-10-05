@@ -1,0 +1,52 @@
+# Environment and Local Secrets
+.env
+.env.*
+.env.local
+!.env.example
+
+# Python Bytecode and Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# OS & System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary Files
+*.log
+logs/
+*.tmp
+*.temp
+
+# Binary Executables & Drivers
+drivers/
+*.exe
+
+# Vector Database & Embeddings Cache (reproducible via scripts/ingest_knowledge.py)
+database/vector_db/
+chroma_db/
+chromadb/
+
+# User Uploaded Documents in Storage (folder kept via .gitkeep)
+storage/vault/*
+!storage/vault/.gitkeep

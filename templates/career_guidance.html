@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Career Guidance Portal - TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<!-- ── Student Welcome Header ── -->
+<section class="py-5" style="background:var(--c-primary); color:#fff; border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div class="container py-3">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge" style="background:rgba(255,255,255,0.12); color:#E2E8F0; font-size:0.75rem; padding:0.4rem 0.8rem; border-radius:4px; font-weight:600;">
+                        <i class="bi bi-person-circle me-1"></i> Student Portal
+                    </span>
+                    {% if current_user and current_user.is_premium %}
+                    <span class="badge" style="background:var(--c-gold); color:#0F172A; font-size:0.75rem; padding:0.4rem 0.8rem; border-radius:4px; font-weight:700;">
+                        <i class="bi bi-star-fill me-1"></i> Premium Access
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background:rgba(255,255,255,0.12); color:#CBD5E1; font-size:0.75rem; padding:0.4rem 0.8rem; border-radius:4px; font-weight:600;">
+                        Standard Student Tier
+                    </span>
+                    {% endif %}
+                </div>
+                <h1 style="font-family:'Outfit', sans-serif; font-weight:800; font-size:clamp(1.8rem, 3.5vw, 2.5rem); letter-spacing:-0.02em; margin-bottom:0.5rem;">
+                    Welcome, {{ current_user.name if current_user else session.get('user_name', 'Student') }}
+                </h1>
+                <p class="text-white-50 mb-0" style="font-size:0.95rem; line-height:1.65; max-width:620px;">
+                    Your personal engineering orientation dashboard. Prepare to evaluate your strengths, interests, and admission cutoff options.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="p-3 d-inline-block text-start" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-sm); min-width:240px;">
+                    <div class="text-white-50 small mb-1">Account Registered Email</div>
+                    <div class="fw-semibold text-white text-truncate" style="font-size:0.9rem;">
+                        <i class="bi bi-envelope me-1 text-muted"></i> {{ current_user.email if current_user else session.get('user_email', '') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Main Guidance Dashboard ── -->
+<div class="container py-5">
+    
+    <!-- Assessment Overview Card -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-8">
+            <div class="p-card p-4 p-md-5 h-100">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 pb-3 border-bottom">
+                    <div>
+                        <span class="text-muted fw-bold text-uppercase" style="font-size:0.72rem; letter-spacing:0.08em;">Module 1</span>
+                        <h3 class="fw-bold mb-0" style="color:var(--c-primary); font-family:'Outfit', sans-serif; font-size:1.35rem;">
+                            Engineering Branch Aptitude &amp; Orientation
+                        </h3>
+                    </div>
+                    <span class="badge" style="background:var(--c-info-bg); color:#0369A1; border:1px solid #BAE6FD; padding:0.4rem 0.75rem; border-radius:4px; font-weight:600;">
+                        <i class="bi bi-clock-history me-1"></i> Phase 1 Setup Ready
+                    </span>
+                </div>
+
+                <p class="text-muted small" style="line-height:1.75; font-size:0.9rem;">
+                    This guided evaluation structure will walk you through self-assessment questions across four core dimensions, helping you discover branches that best fit your profile before finalising your TNEA choice list.
+                </p>
+
+                <div class="row g-3 my-3">
+                    <div class="col-sm-6">
+                        <div class="p-3" style="background:#F8FAFC; border:1px solid var(--c-border); border-radius:var(--radius-sm);">
+                            <div class="fw-bold small mb-1" style="color:var(--c-primary);">1. Understand Yourself</div>
+                            <div class="text-muted" style="font-size:0.8rem;">Evaluate logical, mathematical, hands-on, and visual inclinations.</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3" style="background:#F8FAFC; border:1px solid var(--c-border); border-radius:var(--radius-sm);">
+                            <div class="fw-bold small mb-1" style="color:var(--c-primary);">2. Explore Domains</div>
+                            <div class="text-muted" style="font-size:0.8rem;">Deep-dive into computing, electronics, core, and emerging disciplines.</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3" style="background:#F8FAFC; border:1px solid var(--c-border); border-radius:var(--radius-sm);">
+                            <div class="fw-bold small mb-1" style="color:var(--c-primary);">3. Branch Alignment</div>
+                            <div class="text-muted" style="font-size:0.8rem;">Filter target branch codes (CS, EC, ME, AD, etc.) matching your criteria.</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3" style="background:#F8FAFC; border:1px solid var(--c-border); border-radius:var(--radius-sm);">
+                            <div class="fw-bold small mb-1" style="color:var(--c-primary);">4. Career Direction</div>
+                            <div class="text-muted" style="font-size:0.8rem;">Connect branch tracks to industry sectors and higher studies pathways.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 mt-4 border-top d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <span class="small text-muted d-block">Assessment Engine</span>
+                        <strong style="font-size:0.85rem; color:var(--c-primary);">12th Standard Career Discovery &amp; Branch Match</strong>
+                    </div>
+                    <a href="{{ url_for('assessment') }}" class="btn-portal px-4 py-2">
+                        <i class="bi bi-play-circle-fill me-1"></i> Start Career Assessment
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tier & Guidance Status Sidebar -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4">
+                
+                <!-- Account Status Card -->
+                <div class="p-card p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold mb-0" style="color:var(--c-primary); font-family:'Outfit', sans-serif;">Membership Status</h6>
+                        {% if current_user and current_user.is_premium %}
+                        <span class="badge" style="background:var(--c-gold); color:#0F172A; font-weight:700;">Premium</span>
+                        {% else %}
+                        <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid var(--c-border); font-weight:600;">Free Tier</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted small mb-3" style="line-height:1.65;">
+                        You have access to all fundamental TNEA counseling tools, college search, cutoff analytics, comparison, and guidance frameworks.
+                    </p>
+                    <div class="p-3" style="background:#F8FAFC; border:1px solid var(--c-border); border-radius:var(--radius-sm);">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-info-circle text-primary" style="font-size:0.9rem;"></i>
+                            <span class="fw-bold small" style="color:var(--c-primary);">Upcoming AI Guidance</span>
+                        </div>
+                        <p class="text-muted mb-0" style="font-size:0.78rem; line-height:1.55;">
+                            Future in-depth personalized AI Career Guidance reports will be available for a planned ₹200 fee upon launch.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Navigation Tools -->
+                <div class="p-card p-4">
+                    <h6 class="fw-bold mb-3" style="color:var(--c-primary); font-family:'Outfit', sans-serif;">Counseling Tools</h6>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="/planner" class="btn-portal-outline text-start justify-content-start py-2 px-3" style="font-size:0.85rem;">
+                            <i class="bi bi-calculator me-2 text-primary"></i> Cutoff Admission Planner
+                        </a>
+                        <a href="/compare" class="btn-portal-outline text-start justify-content-start py-2 px-3" style="font-size:0.85rem;">
+                            <i class="bi bi-arrow-left-right me-2 text-primary"></i> Compare Colleges
+                        </a>
+                        <a href="/trend" class="btn-portal-outline text-start justify-content-start py-2 px-3" style="font-size:0.85rem;">
+                            <i class="bi bi-graph-up me-2 text-primary"></i> Cutoff Trends (2023-2025)
+                        </a>
+                        <a href="/search" class="btn-portal-outline text-start justify-content-start py-2 px-3" style="font-size:0.85rem;">
+                            <i class="bi bi-search me-2 text-primary"></i> College Directory &amp; Facilities
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

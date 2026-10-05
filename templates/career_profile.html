@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block title %}Career Recommendation Report — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<!-- ── Student Profile Hero ── -->
+<section class="py-5" style="background:var(--c-primary); color:#fff; border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div class="container py-3">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="badge" style="background:rgba(255,255,255,0.15); color:#E2E8F0; font-size:0.75rem; padding:0.4rem 0.8rem; font-weight:600; letter-spacing:0.04em;">
+                        <i class="bi bi-compass me-1"></i> CAREER RECOMMENDATION ENGINE
+                    </span>
+                    <span class="badge" style="background:var(--c-gold); color:#0F172A; font-size:0.75rem; padding:0.4rem 0.8rem; font-weight:700;">
+                        <i class="bi bi-check-circle-fill me-1"></i> Assessment Completed
+                    </span>
+                </div>
+                <h1 style="font-family:'Outfit', sans-serif; font-weight:800; font-size:clamp(1.8rem, 3.5vw, 2.5rem); letter-spacing:-0.02em; margin-bottom:0.5rem;">
+                    {{ current_user.name if current_user else profile.name or 'Student' }}'s Career Profile &amp; Recommendation
+                </h1>
+                <p class="text-white-50 mb-0" style="font-size:0.95rem; line-height:1.65; max-width:640px;">
+                    Objective engineering branch compatibility guidance synthesized from your 12th academic foundation, reasoning style, and practical interest assessment.
+                </p>
+            </div>
+
+            <!-- TNEA Cutoff Stat Box -->
+            <div class="col-lg-4 text-lg-end">
+                <div class="p-3 d-inline-block text-start" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:var(--radius-sm); min-width:240px;">
+                    <div class="text-white-50 small mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em;">Calculated TNEA Cutoff</div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <span style="font-family:'Outfit', sans-serif; font-size:2.3rem; font-weight:800; color:#FAFAFA; line-height:1;">
+                            {{ "%.2f"|format(profile.cutoff) }}
+                        </span>
+                        <span class="text-white-50" style="font-size:0.95rem;">/ 200</span>
+                    </div>
+                    <div class="small text-white-50 mt-1" style="font-size:0.78rem;">
+                        Category: <strong class="text-white">{{ profile.community }}</strong>
+                        {% if profile.preferred_district %} &bull; {{ profile.preferred_district }}{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Main Profile Body ── -->
+<div class="container py-5">
+
+    <!-- Flash message on submission -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'info' }} py-2 px-3 mb-4 small d-flex align-items-center gap-2" role="alert">
+                <i class="bi bi-check-circle-fill flex-shrink-0"></i>
+                <div>{{ message }}</div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Student Trust & Guidance Note Banner -->
+    <div class="p-3 mb-4 d-flex align-items-start gap-3" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:var(--radius-sm);">
+        <i class="bi bi-shield-check text-primary mt-1 fs-5 flex-shrink-0"></i>
+        <div class="small text-muted" style="font-size:0.83rem; line-height:1.6;">
+            <strong class="text-dark">Guidance Advisory:</strong> These results are guidance based on your assessment responses and academic marks, intended to help you explore suitable engineering pathways. They are not a guarantee of academic or career outcomes. Final branch selection remains your personal decision.
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- LEFT COLUMN: Career Profile & Recommended Engineering Paths -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <div class="col-lg-8">
+
+            <!-- ── SECTION 1: YOUR CAREER PROFILE ── -->
+            <div class="p-card p-4 mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <div>
+                        <span class="text-muted fw-bold text-uppercase" style="font-size:0.72rem; letter-spacing:0.08em;">Dimension Analysis</span>
+                        <h4 class="fw-bold mb-0" style="color:var(--c-primary); font-family:'Outfit', sans-serif; font-size:1.25rem;">
+                            Your Career Profile Overview
+                        </h4>
+                    </div>
+                    <a href="{{ url_for('retake_assessment') }}" class="btn-portal-outline py-1 px-3" style="font-size:0.78rem;" title="Retake assessment to update profile">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retake Assessment
+                    </a>
+                </div>
+
+                <!-- Dimension Trait Level Badges -->
+                <div class="row g-2 mb-4">
+                    {% set trait_summary = [
+                        ('Analytical Thinking & Logic', profile.interest_scores.analytical),
+                        ('Algorithmic & Problem Solving', profile.interest_scores.computing),
+                        ('Hardware & Electronics', profile.interest_scores.electronics),
+                        ('Mechanical & Machinery', profile.interest_scores.mechanical),
+                        ('Creative Design & UI', profile.interest_scores.design),
+                        ('Practical & Hands-on', profile.interest_scores.practical)
+                    ] %}
+                    {% for name, score in trait_summary %}
+                    {% set score_val = score or 50 %}
+                    <div class="col-sm-6 col-md-4">
+                        <div class="p-2 px-3 d-flex justify-content-between align-items-center" style="background:#F8FAFC; border:1px solid var(--c-border); border-radius:var(--radius-sm);">
+                            <span class="small text-muted" style="font-size:0.75rem; font-weight:600;">{{ name }}</span>
+                            <span class="badge" style="font-size:0.72rem; {% if score_val >= 75 %}background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0;{% elif score_val >= 55 %}background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;{% elif score_val >= 40 %}background:#F8FAFC; color:#475569; border:1px solid #E2E8F0;{% else %}background:#FEF2F2; color:#991B1B; border:1px solid #FECACA;{% endif %}">
+                                {% if score_val >= 75 %}Strong{% elif score_val >= 55 %}High{% elif score_val >= 40 %}Moderate{% else %}Developing{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Things You May Enjoy Section -->
+                <div class="p-3" style="background:#F1F5F9; border-radius:var(--radius-sm); border:1px solid #E2E8F0;">
+                    <div class="fw-bold small mb-2" style="color:var(--c-primary); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">
+                        <i class="bi bi-stars text-warning me-1"></i> Things You May Naturally Enjoy:
+                    </div>
+                    <div class="d-flex flex-column gap-1">
+                        {% if profile.interest_scores.computing and profile.interest_scores.computing >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Deconstructing complex problems into step-by-step algorithms and logical workflows.
+                        </div>
+                        {% endif %}
+                        {% if profile.interest_scores.analytical and profile.interest_scores.analytical >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Working with numbers, mathematical riddles, and extracting data-driven insights.
+                        </div>
+                        {% endif %}
+                        {% if profile.interest_scores.electronics and profile.interest_scores.electronics >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Tinkering with smart hardware gadgets, sensor circuits, and electronic devices.
+                        </div>
+                        {% endif %}
+                        {% if profile.interest_scores.mechanical and profile.interest_scores.mechanical >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Understanding physical machinery, moving engine components, and 3D mechanisms.
+                        </div>
+                        {% endif %}
+                        {% if profile.interest_scores.design and profile.interest_scores.design >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Creating visually compelling layouts, user interfaces, and aesthetic presentations.
+                        </div>
+                        {% endif %}
+                        {% if profile.interest_scores.practical and profile.interest_scores.practical >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Building hands-on working prototypes, experimenting, and troubleshooting real devices.
+                        </div>
+                        {% endif %}
+                        {% if profile.interest_scores.civil and profile.interest_scores.civil >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Planning sustainable infrastructure, architectural layouts, and eco-friendly systems.
+                        </div>
+                        {% endif %}
+                        {% if profile.interest_scores.chemical_bio and profile.interest_scores.chemical_bio >= 60 %}
+                        <div class="d-flex align-items-baseline gap-2 text-muted small" style="font-size:0.82rem;">
+                            <i class="bi bi-check2 text-primary"></i> Exploring chemical reactions, materials development, and life sciences technologies.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── SECTION 2: TOP RECOMMENDED ENGINEERING PATHS ── -->
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <div>
+                    <span class="text-muted fw-bold text-uppercase" style="font-size:0.72rem; letter-spacing:0.08em;">Primary Compatibility Matches</span>
+                    <h3 class="fw-bold mb-0" style="color:var(--c-primary); font-family:'Outfit', sans-serif; font-size:1.35rem;">
+                        Engineering Paths to Explore
+                    </h3>
+                </div>
+                <span class="text-muted small">Top 4 Branch Matches</span>
+            </div>
+
+            <!-- Top Branch Cards List -->
+            <div class="d-flex flex-column gap-3 mb-5">
+                {% set top_list = profile.top_branches[:4] %}
+                {% for b in top_list %}
+                <div class="p-card p-4" style="border-left: 5px solid {% if b.fit_percentage >= 80 %}#10B981{% elif b.fit_percentage >= 65 %}#3B82F6{% else %}#94A3B8{% endif %};">
+                    
+                    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge" style="background:#0F172A; color:#fff; font-size:0.75rem; font-weight:700;">
+                                    0{{ loop.index }} &bull; {{ b.branch_code }}
+                                </span>
+                                <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; font-size:0.72rem;">
+                                    {{ b.domain }}
+                                </span>
+                            </div>
+                            <h5 class="fw-bold mb-0" style="color:var(--c-primary); font-family:'Outfit', sans-serif; font-size:1.15rem;">
+                                {{ b.branch_name }}
+                            </h5>
+                        </div>
+
+                        <!-- Fit Score Gauge & Alignment Level -->
+                        <div class="text-end">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="badge px-3 py-2" style="background:{% if b.fit_percentage >= 80 %}#ECFDF5; color:#065F46; border:1px solid #A7F3D0;{% elif b.fit_percentage >= 65 %}#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;{% else %}#F1F5F9; color:#475569; border:1px solid #E2E8F0;{% endif %} font-size:0.95rem; font-family:'Outfit', sans-serif; font-weight:800;">
+                                    Interest Fit: {{ b.fit_percentage }}%
+                                </span>
+                            </div>
+                            <div class="small mt-1" style="font-size:0.75rem; font-weight:600; color:{% if b.fit_percentage >= 80 %}#059669{% elif b.fit_percentage >= 65 %}#2563EB{% else %}#64748B{% endif %};">
+                                {{ b.alignment_level }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mb-3" style="line-height:1.65; font-size:0.86rem;">
+                        {{ b.description }}
+                    </p>
+
+                    <!-- Why this branch matches (Dynamic, personalized explanation) -->
+                    <div class="p-3 mb-3" style="background:#F8FAFC; border:1px solid var(--c-border); border-radius:var(--radius-sm);">
+                        <div class="fw-bold small mb-1" style="color:var(--c-primary); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em;">
+                            <i class="bi bi-chat-quote-fill me-1 text-primary"></i> Why this branch fits your profile:
+                        </div>
+                        <div class="text-muted" style="font-size:0.83rem; line-height:1.6;">
+                            {{ b.why_fit }}
+                        </div>
+                    </div>
+
+                    <!-- Key Strengths Contributing to the Score -->
+                    {% if b.contributing_strengths %}
+                    <div class="mb-3">
+                        <span class="text-muted small d-block mb-1" style="font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">
+                            Key Strengths Contributing to Match:
+                        </span>
+                        <div class="d-flex gap-1 flex-wrap">
+                            {% for strength in b.contributing_strengths %}
+                            <span class="badge" style="background:#F1F5F9; color:#334155; border:1px solid #E2E8F0; font-size:0.72rem; font-weight:600; padding:0.35rem 0.6rem;">
+                                <i class="bi bi-check-circle me-1 text-primary"></i> {{ strength }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- What to Explore Before Deciding -->
+                    {% if b.explore_topics %}
+                    <div class="p-2 px-3 mb-3" style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:var(--radius-sm);">
+                        <span class="small fw-bold text-warning-emphasis d-block mb-1" style="font-size:0.75rem;">
+                            <i class="bi bi-binoculars me-1"></i> What to explore before deciding:
+                        </span>
+                        <ul class="mb-0 text-muted small ps-3" style="font-size:0.78rem; line-height:1.55;">
+                            {% for topic in b.explore_topics %}
+                            <li>{{ topic }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Link to TNEA Planner -->
+                    <div class="d-flex justify-content-end pt-2 border-top">
+                        <a href="{{ url_for('planner', branch=b.branch_code, cutoff='%.2f'|format(profile.cutoff), community=profile.community, district=profile.preferred_district) }}" class="btn-portal-outline py-1 px-3" style="font-size:0.82rem;">
+                            <i class="bi bi-search me-1"></i> Explore {{ b.branch_code }} Colleges in TNEA Planner &rarr;
+                        </a>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ── SECTION 3: ALTERNATIVE OPTIONS WORTH EXPLORING ── -->
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <div>
+                    <span class="text-muted fw-bold text-uppercase" style="font-size:0.72rem; letter-spacing:0.08em;">Broader Pathways</span>
+                    <h4 class="fw-bold mb-0" style="color:var(--c-primary); font-family:'Outfit', sans-serif; font-size:1.25rem;">
+                        Other Paths Worth Exploring
+                    </h4>
+                </div>
+                <span class="badge" style="background:#F8FAFC; color:#64748B; border:1px solid #E2E8F0;">Alternative Tracks</span>
+            </div>
+
+            <p class="text-muted small mb-3" style="font-size:0.84rem; line-height:1.6;">
+                Students often possess multifaceted interests. These related engineering disciplines offer strong cross-domain opportunities and alternative career trajectories:
+            </p>
+
+            <div class="row g-3 mb-4">
+                {% set alt_list = profile.top_branches[4:7] %}
+                {% for b in alt_list %}
+                <div class="col-md-12">
+                    <div class="p-card p-3" style="background:#FAFAFA; border:1px solid var(--c-border);">
+                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+                            <div>
+                                <span class="badge me-1" style="background:#475569; color:#fff; font-size:0.7rem;">{{ b.branch_code }}</span>
+                                <strong class="small" style="color:var(--c-primary); font-size:0.95rem;">{{ b.branch_name }}</strong>
+                                <span class="text-muted small ms-1" style="font-size:0.76rem;">({{ b.domain }})</span>
+                            </div>
+                            <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; font-size:0.8rem; font-weight:700;">
+                                Interest Fit: {{ b.fit_percentage }}%
+                            </span>
+                        </div>
+
+                        <div class="small text-muted mb-2" style="font-size:0.8rem; line-height:1.55;">
+                            <strong>Why explore this path:</strong> {{ b.alternative_reason or b.description }}
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                            <span class="badge bg-light text-muted" style="font-size:0.7rem;">{{ b.alignment_level }}</span>
+                            <a href="{{ url_for('planner', branch=b.branch_code, cutoff='%.2f'|format(profile.cutoff), community=profile.community) }}" class="small fw-semibold text-primary" style="font-size:0.78rem; text-decoration:none;">
+                                Check Cutoff Odds &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- RIGHT COLUMN: Academic Marks & Dimension Gauges -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4">
+
+                <!-- Academic Marks & Cutoff Card -->
+                <div class="p-card p-4">
+                    <h6 class="fw-bold mb-3" style="color:var(--c-primary); font-family:'Outfit', sans-serif; font-size:0.92rem;">
+                        <i class="bi bi-award me-1 text-primary"></i> 12th Academic Marks &amp; Cutoff
+                    </h6>
+
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="d-flex justify-content-between align-items-center p-2" style="background:#F8FAFC; border-radius:var(--radius-sm); border:1px solid var(--c-border);">
+                            <span class="small fw-semibold" style="font-size:0.82rem;">Mathematics</span>
+                            <div class="text-end">
+                                <strong style="color:var(--c-primary); font-size:0.88rem;">{{ profile.maths_marks }}</strong> <span class="text-muted small">/ 100</span>
+                                <span class="badge ms-1 bg-{{ profile.subject_strengths.maths.badge }} text-white" style="font-size:0.65rem;">
+                                    {{ profile.subject_strengths.maths.level }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center p-2" style="background:#F8FAFC; border-radius:var(--radius-sm); border:1px solid var(--c-border);">
+                            <span class="small fw-semibold" style="font-size:0.82rem;">Physics</span>
+                            <div class="text-end">
+                                <strong style="color:var(--c-primary); font-size:0.88rem;">{{ profile.physics_marks }}</strong> <span class="text-muted small">/ 100</span>
+                                <span class="badge ms-1 bg-{{ profile.subject_strengths.physics.badge }} text-white" style="font-size:0.65rem;">
+                                    {{ profile.subject_strengths.physics.level }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center p-2" style="background:#F8FAFC; border-radius:var(--radius-sm); border:1px solid var(--c-border);">
+                            <span class="small fw-semibold" style="font-size:0.82rem;">Chemistry</span>
+                            <div class="text-end">
+                                <strong style="color:var(--c-primary); font-size:0.88rem;">{{ profile.chemistry_marks }}</strong> <span class="text-muted small">/ 100</span>
+                                <span class="badge ms-1 bg-{{ profile.subject_strengths.chemistry.badge }} text-white" style="font-size:0.65rem;">
+                                    {{ profile.subject_strengths.chemistry.level }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if profile.cs_bio_marks is not none %}
+                        <div class="d-flex justify-content-between align-items-center p-2" style="background:#F8FAFC; border-radius:var(--radius-sm); border:1px solid var(--c-border);">
+                            <span class="small fw-semibold" style="font-size:0.82rem;">CS / Biology</span>
+                            <div class="text-end">
+                                <strong style="color:var(--c-primary); font-size:0.88rem;">{{ profile.cs_bio_marks }}</strong> <span class="text-muted small">/ 100</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Formula note -->
+                    <div class="p-2 px-3" style="background:#F1F5F9; border-radius:var(--radius-sm); border:1px solid #E2E8F0;">
+                        <div class="small text-muted" style="font-size:0.75rem; line-height:1.5;">
+                            <strong>Cutoff:</strong> {{ profile.maths_marks }} + ({{ profile.physics_marks }}/2) + ({{ profile.chemistry_marks }}/2) = <strong class="text-dark">{{ "%.2f"|format(profile.cutoff) }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Complete Interest Dimensions Profile -->
+                <div class="p-card p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold mb-0" style="color:var(--c-primary); font-family:'Outfit', sans-serif; font-size:0.92rem;">
+                            <i class="bi bi-bar-chart-fill me-1 text-primary"></i> Assessment Dimensions
+                        </h6>
+                        <span class="text-muted small" style="font-size:0.7rem;">0-100%</span>
+                    </div>
+
+                    {% set dims = [
+                        ('analytical', 'Analytical Reasoning', profile.interest_scores.analytical),
+                        ('computing', 'Computing & Logic', profile.interest_scores.computing),
+                        ('electronics', 'Electronics & Circuits', profile.interest_scores.electronics),
+                        ('mechanical', 'Mechanical & Machines', profile.interest_scores.mechanical),
+                        ('design', 'Design & Aesthetics', profile.interest_scores.design),
+                        ('practical', 'Practical & Hands-on', profile.interest_scores.practical),
+                        ('research', 'Scientific Inquiry', profile.interest_scores.research),
+                        ('civil', 'Civil & Infrastructure', profile.interest_scores.civil),
+                        ('chemical_bio', 'Chemical & Life Sciences', profile.interest_scores.chemical_bio)
+                    ] %}
+
+                    <div class="d-flex flex-column gap-3">
+                        {% for key, label, score in dims %}
+                        {% set s_val = score or 50 %}
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small text-muted" style="font-size:0.78rem; font-weight:600;">{{ label }}</span>
+                                <strong class="small" style="font-size:0.8rem; color:var(--c-primary);">{{ s_val }}%</strong>
+                            </div>
+                            <div class="progress" style="height: 6px; background:#E2E8F0; border-radius:3px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ s_val }}%; background: {% if s_val >= 75 %}#10B981{% elif s_val >= 55 %}#3B82F6{% else %}#94A3B8{% endif %};" aria-valuenow="{{ s_val }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- AI Career Assistant Launcher -->
+                <div class="p-card p-4" style="background:#FAF5FF; border:1px solid #E9D5FF;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="feature-icon" style="width:32px; height:32px; font-size:0.85rem; background:#8B5CF6; color:#fff; border-radius:50%;">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0" style="color:#6B21A8; font-family:'Outfit', sans-serif; font-size:0.88rem;">
+                            AI Career Counselor
+                        </h6>
+                    </div>
+                    <p class="mb-3 text-muted" style="font-size:0.78rem; line-height:1.55;">
+                        Have questions like <em>"Why was this branch recommended?"</em> or <em>"CSE vs ECE?"</em> Chat directly with your profile-aware assistant.
+                    </p>
+                    <a href="{{ url_for('career_assistant_view') }}" class="btn-portal w-100 py-2 text-center" style="font-size:0.82rem; background:#7C3AED; border-color:#7C3AED;">
+                        <i class="bi bi-chat-dots-fill me-1"></i> Open AI Career Assistant
+                    </a>
+                </div>
+
+                <!-- CRITICAL DISTINCTION: Career Fit vs TNEA Admission Opportunity -->
+                <div class="p-card p-4" style="background:#F0F9FF; border:1px solid #BAE6FD;">
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-info-circle-fill text-primary mt-1"></i>
+                        <h6 class="fw-bold mb-0" style="color:#0369A1; font-family:'Outfit', sans-serif; font-size:0.88rem;">
+                            Career Fit vs. Admission Chance
+                        </h6>
+                    </div>
+                    <p class="mb-0 text-muted" style="font-size:0.79rem; line-height:1.6; color:#0369A1;">
+                        <strong>Career Fit (0–100%):</strong> How closely a branch aligns with your thinking style and subject strengths.<br><br>
+                        <strong>TNEA Admission Chance:</strong> Your probability of getting a seat in specific colleges based on your Cutoff (<strong>{{ "%.2f"|format(profile.cutoff) }}</strong>) and Community (<strong>{{ profile.community }}</strong>).
+                    </p>
+                    <div class="pt-3 mt-3 border-top" style="border-color:#BAE6FD !important;">
+                        <a href="/planner" class="btn-portal w-100 py-2" style="font-size:0.82rem;">
+                            <i class="bi bi-calculator me-1"></i> Check College Cutoffs in Planner
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

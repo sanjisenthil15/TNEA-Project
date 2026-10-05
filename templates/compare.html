@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Colleges — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ── college accent strips ── */
+  .college-strip-0 { border-top: 4px solid var(--c-primary); }
+  .college-strip-1 { border-top: 4px solid #EF4444; }
+  .college-strip-2 { border-top: 4px solid #F59E0B; }
+  .college-strip-3 { border-top: 4px solid #06B6D4; }
+  .college-strip-4 { border-top: 4px solid #8B5CF6; }
+
+  /* ── comparison table styling ── */
+  .cmp-table th, .cmp-table td { vertical-align: middle; padding: 1rem 1.25rem !important; }
+  .cmp-table .feat-col { width: 22%; min-width: 140px; background: #F8FAFC; font-weight: 700; color: var(--c-primary); font-size: .85rem; }
+  .cmp-table thead th {
+    background: #F1F5F9; font-size: .78rem; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--c-primary); border-bottom: 2px solid var(--c-border);
+    font-weight: 800; min-width: 170px;
+  }
+
+  /* ── Advantage highlighting ── */
+  .cell-better { background: var(--c-success-bg) !important; font-weight: 600; }
+  .cell-worse  { background: var(--c-danger-bg) !important; opacity: 0.85; }
+
+  /* ── branch scroll box ── */
+  .branch-scroll { max-height: 320px; overflow-y: auto; scrollbar-width: thin; }
+
+  @media print {
+    nav, footer, .no-print { display: none !important; }
+    .branch-scroll { max-height: none; overflow: visible; }
+    .container { max-width: 100% !important; }
+    body { font-size: 12px; }
+  }
+</style>
+
+<div class="container py-4 py-md-5">
+
+  {# ── Page Header ── #}
+  <div class="mb-5 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h2 class="fw-bold text-primary mb-2" style="font-family:'Outfit', sans-serif;">College Comparison</h2>
+      <p class="text-muted mb-0">Compare details and course coverage to align with your admissions preferences.</p>
+    </div>
+    {% if colleges and colleges|length > 0 %}
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-light text-primary border px-3 py-2 fw-semibold" style="font-size:0.85rem;">
+        Comparing {{ colleges|length }} institution{{ 's' if colleges|length > 1 else '' }}
+      </span>
+      {% if not is_premium %}
+      <a href="{{ url_for('premium_view') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="tooltip" title="Upgrade to compare up to 5 colleges">
+        ✦ Compare up to 5 with Premium
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if error %}
+  {# ── Error / Upgrade State ── #}
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
+        <div class="fs-1 mb-2">{% if upgrade_required %}✦{% else %}⚠️{% endif %}</div>
+        <h5 class="fw-bold text-primary mb-2">{% if upgrade_required %}Premium Upgrade Available{% else %}Cannot Load Comparison{% endif %}</h5>
+        <p class="text-muted mb-4" style="font-size:0.92rem; line-height:1.6;">{{ error }}</p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+          {% if upgrade_required %}
+          <a href="{{ url_for('premium_view') }}" class="btn btn-portal px-4">View Premium Plans ✦</a>
+          <a href="{{ url_for('search') }}" class="btn btn-portal-outline px-4">Back to Search</a>
+          {% else %}
+          <a href="{{ url_for('planner') }}" class="btn btn-portal px-4">← Back to Planner</a>
+          <a href="{{ url_for('search') }}" class="btn btn-portal-outline px-4">Search Colleges</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+
+  {% set badge_colors = ['primary', 'danger', 'warning', 'info', 'secondary'] %}
+  {% set col_class = 'col-md-6' if colleges|length == 2 else ('col-md-4' if colleges|length == 3 else ('col-md-6 col-lg-3' if colleges|length == 4 else 'col-md-6 col-lg-4 col-xl')) %}
+
+  {# ── College Header Cards ── #}
+  <div class="row g-4 mb-4">
+    {% for col in colleges %}
+    {% set idx = loop.index0 %}
+    {% set label = ['A', 'B', 'C', 'D', 'E'][idx] if idx < 5 else (idx + 1)|string %}
+    {% set bcolor = badge_colors[idx % badge_colors|length] %}
+    <div class="{{ col_class }}">
+      <div class="card border-0 shadow-sm rounded-4 h-100 college-strip-{{ idx }} bg-white">
+        <div class="card-body p-4 d-flex flex-column justify-content-between">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="badge bg-{{ bcolor }} rounded-pill px-2.5 py-1.5 fs-7" style="font-size: 0.75rem;">{{ label }}</span>
+              <span class="text-muted small fw-bold text-uppercase" style="letter-spacing:0.05em;">College {{ label }}</span>
+            </div>
+            <h4 class="fw-bold text-primary mb-3" style="font-size:1.15rem; min-height: 2.8rem; line-height:1.45;">
+              {{ col.college_name or 'College ' ~ col.college_code }}
+            </h4>
+            <div class="row g-3 border-top pt-3">
+              <div class="col-6">
+                <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem; letter-spacing:.05em;">TNEA Code</div>
+                <div class="fw-bold text-primary">{{ col.college_code }}</div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem; letter-spacing:.05em;">Type</div>
+                <div class="fw-semibold text-secondary small">{{ col.college_type or '—' }}</div>
+              </div>
+              <div class="col-12">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 fw-bold" style="font-size:0.75rem;">
+                  📍 {{ (col.district or 'N/A') | replace(' District','') | replace(' district','') | title }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-2">
+            <a href="{{ url_for('college_details', college_code=col.college_code) }}"
+               class="btn btn-sm btn-outline-{{ bcolor }} rounded-pill w-100"
+               data-bs-toggle="tooltip" title="View details and contacts for College {{ label }}">
+              View Profile Details →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Side-by-Side Comparison Matrix ── #}
+  <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="card-body p-4">
+
+      <div class="section-title mb-3">
+        <i class="bi bi-layout-three-columns me-2 text-secondary"></i> Side-by-Side Comparison
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover cmp-table align-middle mb-0 border rounded-3 overflow-hidden">
+          <thead>
+            <tr>
+              <th class="feat-col">Features</th>
+              {% for col in colleges %}
+              {% set idx = loop.index0 %}
+              {% set label = ['A', 'B', 'C', 'D', 'E'][idx] if idx < 5 else (idx + 1)|string %}
+              {% set bcolor = badge_colors[idx % badge_colors|length] %}
+              <th>
+                <span class="badge bg-{{ bcolor }} me-2">{{ label }}</span>
+                {{ (col.college_name or 'College ' ~ label) | truncate(35, true, '…') }}
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+
+            {# ── Basic Information Group ── #}
+            <tr class="table-light">
+              <td colspan="{{ colleges|length + 1 }}" class="py-2.5 ps-3 border-bottom">
+                <small class="fw-bold text-uppercase text-secondary" style="letter-spacing:.08em; font-size:0.72rem;"><i class="bi bi-info-circle-fill me-1"></i> Core Profile</small>
+              </td>
+            </tr>
+            <tr>
+              <th class="feat-col">📍 District</th>
+              {% for col in colleges %}
+              <td>{{ (col.district or '—') | replace(' District','') | replace(' district','') | title }}</td>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th class="feat-col">🏙️ Taluk</th>
+              {% for col in colleges %}
+              <td>{{ col.taluk or '—' }}</td>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th class="feat-col">📮 Address</th>
+              {% for col in colleges %}
+              <td style="max-width:240px; font-size:0.82rem; color:var(--c-muted);">{{ col.address or '—' }}</td>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th class="feat-col">📬 Pincode</th>
+              {% for col in colleges %}
+              <td>{{ col.pincode or '—' }}</td>
+              {% endfor %}
+            </tr>
+
+            {# ── Contact Info Group ── #}
+            <tr class="table-light">
+              <td colspan="{{ colleges|length + 1 }}" class="py-2.5 ps-3 border-bottom">
+                <small class="fw-bold text-uppercase text-secondary" style="letter-spacing:.08em; font-size:0.72rem;"><i class="bi bi-envelope-fill me-1"></i> Communication</small>
+              </td>
+            </tr>
+            <tr>
+              <th class="feat-col">📧 Email</th>
+              {% for col in colleges %}
+              <td>
+                {% if col.email %}
+                <a href="mailto:{{ col.email }}" class="text-decoration-none text-primary fw-semibold small" style="word-break:break-all;">{{ col.email }}</a>
+                {% else %}
+                <span class="text-muted small">Not Available</span>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th class="feat-col">🌐 Website</th>
+              {% for col in colleges %}
+              {% set idx = loop.index0 %}
+              {% set bcolor = badge_colors[idx % badge_colors|length] %}
+              <td>
+                {% if col.website and col.website.strip() %}
+                  {% set _w = col.website.strip() %}
+                  {% if _w.startswith('http://') or _w.startswith('https://') %}
+                    {% set url_link = _w %}
+                  {% else %}
+                    {% set url_link = 'https://' ~ _w %}
+                  {% endif %}
+                  <a href="{{ url_link }}" target="_blank" rel="noopener noreferrer"
+                     class="btn btn-sm btn-outline-{{ bcolor }} rounded-pill px-3">🌐 Website</a>
+                {% else %}
+                  <span class="text-muted small">Unavailable</span>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+
+            {# ── Facilities Group ── #}
+            <tr class="table-light">
+              <td colspan="{{ colleges|length + 1 }}" class="py-2.5 ps-3 border-bottom">
+                <small class="fw-bold text-uppercase text-secondary" style="letter-spacing:.08em; font-size:0.72rem;"><i class="bi bi-award-fill me-1"></i> Facilities &amp; Autonomy</small>
+              </td>
+            </tr>
+
+            {# Autonomous #}
+            <tr>
+              <th class="feat-col">🏆 Autonomous</th>
+              {% for col in colleges %}
+              {% set is_auto = col.autonomous and col.autonomous|lower == 'yes' %}
+              <td>
+                {% if is_auto %}<span class="badge bg-success px-3 py-1.5 rounded-pill">Yes</span>
+                {% else %}<span class="badge bg-secondary px-3 py-1.5 rounded-pill">No</span>{% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+
+            {# Boys Hostel #}
+            <tr>
+              <th class="feat-col">🏠 Boys Hostel</th>
+              {% for col in colleges %}
+              {% set is_hb = col.hostel_boys and col.hostel_boys|lower == 'yes' %}
+              <td>
+                {% if is_hb %}<span class="badge bg-success px-3 py-1.5 rounded-pill">Yes</span>
+                {% else %}<span class="badge bg-danger px-3 py-1.5 rounded-pill">No</span>{% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+
+            {# Girls Hostel #}
+            <tr>
+              <th class="feat-col">🏠 Girls Hostel</th>
+              {% for col in colleges %}
+              {% set is_hg = col.hostel_girls and col.hostel_girls|lower == 'yes' %}
+              <td>
+                {% if is_hg %}<span class="badge bg-success px-3 py-1.5 rounded-pill">Yes</span>
+                {% else %}<span class="badge bg-danger px-3 py-1.5 rounded-pill">No</span>{% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+
+            {# Transport #}
+            <tr>
+              <th class="feat-col">🚌 Transport</th>
+              {% for col in colleges %}
+              {% set is_tr = col.transport and col.transport|lower == 'yes' %}
+              <td>
+                {% if is_tr %}<span class="badge bg-success px-3 py-1.5 rounded-pill">Yes</span>
+                {% else %}<span class="badge bg-danger px-3 py-1.5 rounded-pill">No</span>{% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Available Branch Lists ── #}
+  <div class="row g-4 mb-4">
+    {% for col in colleges %}
+    {% set idx = loop.index0 %}
+    {% set label = ['A', 'B', 'C', 'D', 'E'][idx] if idx < 5 else (idx + 1)|string %}
+    {% set bcolor = badge_colors[idx % badge_colors|length] %}
+    {% set brs = branches_list[idx] if branches_list and idx < branches_list|length else [] %}
+    <div class="{{ col_class }}">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+        <div class="card-body p-4">
+          <div class="section-title mb-3" style="font-size:0.95rem;">
+            🎓 Branches — <span class="text-{{ bcolor }}">{{ (col.college_name or 'College ' ~ label) | truncate(30, true, '…') }}</span>
+          </div>
+          {% if brs %}
+          <div class="branch-scroll border rounded-3 p-2 bg-light">
+            <ul class="list-group list-group-flush">
+              {% for b in brs %}
+              <li class="list-group-item bg-transparent px-2 py-2 d-flex align-items-center gap-2">
+                <span class="badge bg-{{ bcolor }} bg-opacity-10 text-{{ bcolor }} px-2" style="font-size:.7rem; font-family: monospace;">{{ b.branch_code }}</span>
+                <span style="font-size:.84rem; font-weight:600; color:var(--c-text);">{{ b.branch_name }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div class="mt-2 text-end text-muted"><small class="fw-bold">{{ brs|length }} Course Specializations</small></div>
+          {% else %}<p class="text-muted mb-0">No branches loaded.</p>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── AI Advisor Summary ── #}
+  <div class="card border shadow-sm rounded-4 mb-5 bg-white">
+    <div class="card-body p-4">
+      <div class="section-title mb-3"><i class="bi bi-clipboard-data me-2"></i> Advisor Comparison Summary</div>
+      {% if comparison_summary %}
+      <div class="alert alert-light border p-4 rounded-4 mb-0">
+        <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 0.9rem; color:var(--c-text);">
+          {% for point in comparison_summary %}
+          <li class="d-flex align-items-start gap-2">
+            <span class="text-primary mt-1">•</span>
+            <span style="line-height:1.6;">{{ point }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">No comparison summary compiled.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Print & Navigate Actions ── #}
+  <div class="d-flex flex-wrap justify-content-center gap-3 mt-2 mb-5 no-print">
+    <button onclick="history.back()" class="btn btn-portal-outline btn-lg"><i class="bi bi-arrow-left"></i> Back</button>
+    <a href="{{ url_for('planner') }}" class="btn btn-portal-outline btn-lg"><i class="bi bi-compass"></i> Planner</a>
+    <a href="{{ url_for('search') }}" class="btn btn-portal-outline btn-lg"><i class="bi bi-search"></i> Search Colleges</a>
+    <button onclick="window.print()" class="btn btn-portal btn-lg" data-bs-toggle="tooltip" title="Export page to PDF/Print">
+      <i class="bi bi-printer"></i> Print Comparison
+    </button>
+  </div>
+
+  {% endif %}
+
+</div>
+
+<!-- Back to top button -->
+<button id="backToTop" class="btn btn-portal rounded-circle shadow-lg position-fixed" style="bottom: 2rem; right: 1.5rem; width: 44px; height: 44px; display: none; align-items: center; justify-content: center; z-index:1039;" aria-label="Back to top" data-bs-toggle="tooltip" title="Back to top">
+  <i class="bi bi-arrow-up-short fs-4"></i>
+</button>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+
+    /* Tooltips initialization */
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el, { trigger: 'hover' });
+    });
+
+    /* Back-to-top handler */
+    var btt = document.getElementById("backToTop");
+    if (btt) {
+        window.addEventListener("scroll", function () {
+            if(window.scrollY > 400) {
+                btt.style.display = "flex";
+            } else {
+                btt.style.display = "none";
+            }
+        });
+        btt.addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+}());
+</script>
+{% endblock %}

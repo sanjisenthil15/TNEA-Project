@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}Cutoff Trend Analysis — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+
+<style>
+    .trend-wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 4rem;
+    }
+
+    .filter-card {
+        background: #fff;
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .graph-card {
+        background: #fff;
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-md);
+        padding: 2.25rem 2.5rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .trend-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .85rem;
+        font-weight: 700;
+        padding: .35em 1rem;
+        border-radius: var(--radius-sm);
+    }
+    .trend-increasing { background: var(--c-success-bg); color: var(--c-success); border: 1px solid rgba(16, 185, 129, 0.15); }
+    .trend-decreasing { background: var(--c-danger-bg); color: var(--c-danger); border: 1px solid rgba(239, 68, 68, 0.15); }
+    .trend-stable     { background: var(--c-warning-bg); color: #B45309; border: 1px solid rgba(245, 158, 11, 0.15); }
+
+    .community-pill {
+        display: inline-block;
+        background: var(--c-info-bg);
+        color: var(--c-primary-light);
+        border: 1px solid rgba(30, 58, 95, 0.1);
+        font-size: .75rem;
+        font-weight: 700;
+        padding: .25em .8em;
+        border-radius: 4px;
+        letter-spacing: .05em;
+    }
+
+    .chart-container { width: 100%; overflow-x: auto; margin: 1.5rem 0; }
+    .chart-svg { display: block; width: 100%; min-width: 320px; }
+
+    .trend-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .875rem;
+        margin-top: 2rem;
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+    }
+    .trend-table th {
+        background: var(--c-primary);
+        color: #fff;
+        padding: .75rem 1.25rem;
+        text-align: left;
+        font-size: .75rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-weight: 700;
+    }
+    .trend-table td {
+        padding: .75rem 1.25rem;
+        border-bottom: 1px solid var(--c-border);
+        color: var(--c-text);
+    }
+    .trend-table tr:last-child td { border-bottom: none; }
+    .trend-table tr:nth-child(even) td { background: #F8FAFC; }
+
+    .no-data-box {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--c-muted);
+    }
+    .no-data-box .nd-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .no-data-box p { font-size: .95rem; margin: 0; }
+
+    @media (max-width: 768px) {
+        .trend-wrap { padding: 2rem 1rem 3rem; }
+        .filter-card, .graph-card { padding: 1.5rem; }
+    }
+</style>
+
+<div class="trend-wrap">
+
+    <!-- Page Header -->
+    <div class="border-bottom pb-3 mb-4">
+        <span class="text-uppercase fw-bold text-muted mb-1 d-block" style="font-size:.7rem; letter-spacing:.15em;">
+            Counselling Trends
+        </span>
+        <h1 class="h3 fw-bold text-primary mb-0" style="font-family:'Outfit', sans-serif;">
+            Cutoff Trend Analysis
+        </h1>
+        <p style="font-size:.875rem; color:var(--c-muted); margin:0;">
+            Compare cutoff histories (2023–2025) for colleges, branches, and community configurations.
+        </p>
+    </div>
+
+    <!-- Filter selectors -->
+    <div class="filter-card border-0 shadow-sm bg-white">
+        <form method="GET" action="/trend" id="trendForm">
+            <div class="row g-3">
+
+                <!-- College -->
+                <div class="col-lg-5">
+                    <label class="form-section-label">Select Institution</label>
+                    <div class="select-wrap">
+                        <select name="college_code" class="portal-select" required>
+                            <option value="">— Choose College —</option>
+                            {% for c in colleges %}
+                            <option value="{{ c.college_code }}"
+                                {% if c.college_code|string == college_code %}selected{% endif %}>
+                                {{ c.college_code }} — {{ c.college_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Branch -->
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-section-label">Preferred Branch</label>
+                    <div class="select-wrap">
+                        <select name="branch_code" class="portal-select" required>
+                            <option value="">— Choose Branch —</option>
+                            {% for b in branches %}
+                            <option value="{{ b.branch_code }}"
+                                {% if b.branch_code == branch_code %}selected{% endif %}>
+                                {{ b.branch_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Community -->
+                <div class="col-md-6 col-lg-2">
+                    <label class="form-section-label">Quota Category</label>
+                    <div class="select-wrap">
+                        <select name="community" class="portal-select">
+                            {% for com in communities %}
+                            <option value="{{ com }}"
+                                {% if com == community %}selected{% endif %}>
+                                {{ com }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-2 d-flex align-items-end">
+                    <button type="submit" class="btn-submit-full" style="padding:.75rem 1rem;">
+                        <i class="bi bi-graph-up"></i> Load Trend
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <!-- Trend Graph & Stats -->
+    {% if trend_data %}
+
+    <div class="graph-card border-0 shadow-sm bg-white">
+
+        <!-- Chart Header Details -->
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4 pb-3 border-bottom">
+            <div style="flex:1; min-width:0;">
+                <h4 class="fw-bold text-primary mb-2" style="font-size:1.15rem; font-family:'Outfit', sans-serif;">{{ college_name }}</h4>
+                <div class="d-flex align-items-center gap-3 flex-wrap" style="font-size:.84rem;">
+                    <span class="text-muted"><i class="bi bi-cpu text-primary me-1"></i>Branch: <strong style="color:var(--c-text);">{{ branch_name }}</strong></span>
+                    <span class="community-pill">{{ community }} Quota</span>
+                </div>
+            </div>
+            {% if trend_direction %}
+            <div>
+                {% if trend_direction == 'Increasing' %}
+                <span class="trend-badge trend-increasing"><i class="bi bi-graph-up-arrow"></i> Increasing Cutoff</span>
+                {% elif trend_direction == 'Decreasing' %}
+                <span class="trend-badge trend-decreasing"><i class="bi bi-graph-down-arrow"></i> Decreasing Cutoff</span>
+                {% else %}
+                <span class="trend-badge trend-stable"><i class="bi bi-arrow-right-short"></i> Stable Trend</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- SVG Line Chart Grid -->
+        {% set values_list = trend_data | map(attribute='cutoff') | list %}
+        {% set min_val   = values_list | min %}
+        {% set max_val   = values_list | max %}
+        {% set val_range = (max_val - min_val) if max_val != min_val else 1 %}
+
+        {% set W       = 740 %}
+        {% set H       = 280 %}
+        {% set PAD_L   = 60 %}
+        {% set PAD_R   = 35 %}
+        {% set PAD_T   = 30 %}
+        {% set PAD_B   = 45 %}
+        {% set chart_w = W - PAD_L - PAD_R %}
+        {% set chart_h = H - PAD_T - PAD_B %}
+        {% set n       = trend_data | length %}
+
+        <div class="chart-container">
+        <svg class="chart-svg" viewBox="0 0 {{ W }} {{ H }}" xmlns="http://www.w3.org/2000/svg">
+
+            <!-- Horizontal Grid lines -->
+            {% for i in range(5) %}
+            {% set gy = PAD_T + (chart_h * i / 4) %}
+            {% set gv = max_val - (val_range * i / 4) %}
+            <line x1="{{ PAD_L }}" y1="{{ gy }}" x2="{{ W - PAD_R }}" y2="{{ gy }}"
+                  stroke="#E2E8F0" stroke-width="1" stroke-dasharray="2 4"/>
+            <text x="{{ PAD_L - 10 }}" y="{{ gy + 4 }}"
+                  text-anchor="end" font-size="11" fill="#94A3B8" font-weight="600">{{ "%.1f"|format(gv) }}</text>
+            {% endfor %}
+
+            <!-- Transparent Area Gradient fill under curve -->
+            {% set area_pts = "" %}
+            {% for d in trend_data %}
+                {% set xi = PAD_L + (loop.index0 / (n - 1)) * chart_w if n > 1 else PAD_L + chart_w / 2 %}
+                {% set yi = PAD_T + chart_h - ((d.cutoff - min_val) / val_range) * chart_h %}
+                {% set area_pts = area_pts ~ xi ~ "," ~ yi ~ " " %}
+            {% endfor %}
+            <polygon
+                points="{{ PAD_L }},{{ PAD_T + chart_h }} {{ area_pts }} {{ PAD_L + chart_w if n > 1 else PAD_L + chart_w/2 }},{{ PAD_T + chart_h }}"
+                fill="rgba(30, 58, 95, 0.05)" stroke="none"/>
+
+            <!-- Chart Line Segment paths -->
+            {% for d in trend_data %}
+                {% if not loop.last %}
+                {% set x1 = PAD_L + (loop.index0 / (n - 1)) * chart_w %}
+                {% set y1 = PAD_T + chart_h - ((d.cutoff - min_val) / val_range) * chart_h %}
+                {% set x2 = PAD_L + ((loop.index0 + 1) / (n - 1)) * chart_w %}
+                {% set d2 = trend_data[loop.index0 + 1] %}
+                {% set y2 = PAD_T + chart_h - ((d2.cutoff - min_val) / val_range) * chart_h %}
+                <line x1="{{ x1 }}" y1="{{ y1 }}" x2="{{ x2 }}" y2="{{ y2 }}"
+                      stroke="var(--c-primary)" stroke-width="3" stroke-linecap="round"/>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Plot Data Points and Ranks -->
+            {% for d in trend_data %}
+                {% set xi = PAD_L + (loop.index0 / (n - 1)) * chart_w if n > 1 else PAD_L + chart_w / 2 %}
+                {% set yi = PAD_T + chart_h - ((d.cutoff - min_val) / val_range) * chart_h %}
+                <circle cx="{{ xi }}" cy="{{ yi }}" r="7.5" fill="var(--c-accent-glow)" stroke="none"/>
+                <circle cx="{{ xi }}" cy="{{ yi }}" r="5" fill="var(--c-primary)" stroke="#fff" stroke-width="2.5"/>
+                <text x="{{ xi }}" y="{{ yi - 14 }}"
+                      text-anchor="middle" font-size="12" font-weight="800" fill="var(--c-primary)">
+                    {{ d.cutoff }}
+                </text>
+                <text x="{{ xi }}" y="{{ H - 10 }}"
+                      text-anchor="middle" font-size="12" fill="var(--c-muted)" font-weight="700">
+                    {{ d.year }} AY
+                </text>
+            {% endfor %}
+
+        </svg>
+        </div>
+
+        <!-- History Data Table -->
+        <table class="trend-table border">
+            <thead>
+                <tr>
+                    <th>Academic Year</th>
+                    <th>{{ community }} Cutoff score</th>
+                    <th>Annual Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in trend_data %}
+                <tr>
+                    <td><strong>{{ d.year }}</strong></td>
+                    <td class="fw-bold text-primary">{{ d.cutoff }}</td>
+                    <td>
+                        {% if loop.index0 == 0 %}
+                        <span class="text-muted small">— Baseline Year</span>
+                        {% else %}
+                        {% set prev = trend_data[loop.index0 - 1].cutoff %}
+                        {% set diff = d.cutoff - prev %}
+                        {% if diff > 0 %}
+                        <span class="text-success fw-bold"><i class="bi bi-caret-up-fill"></i> +{{ "%.2f"|format(diff) }}</span>
+                        {% elif diff < 0 %}
+                        <span class="text-danger fw-bold"><i class="bi bi-caret-down-fill"></i> {{ "%.2f"|format(diff) }}</span>
+                        {% else %}
+                        <span class="text-warning fw-bold">— No change</span>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    {% elif college_code and branch_code %}
+
+    <div class="graph-card border-0 shadow-sm bg-white">
+        <div class="no-data-box">
+            <div class="nd-icon"><i class="bi bi-graph-down"></i></div>
+            <p class="mb-0 text-muted">
+                No historical <strong>{{ community }}</strong> cutoff entries found for this college and course.<br>
+                Please try modifying your community choice or check other branches.
+            </p>
+        </div>
+    </div>
+
+    {% else %}
+
+    <div class="graph-card border-0 shadow-sm bg-white">
+        <div class="no-data-box">
+            <div class="nd-icon"><i class="bi bi-search"></i></div>
+            <p class="mb-0 text-muted">Select an institution, academic course, and quota category above to render the cutoff trend.</p>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

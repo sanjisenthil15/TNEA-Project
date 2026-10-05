@@ -1,0 +1,31 @@
+/* ================================================
+   TNEA Career Insight Navigator — Responsive
+================================================ */
+
+@media (max-width: 1199px) {
+    .hero-stats-panel { padding: 1.5rem 1.25rem; }
+}
+
+@media (max-width: 991px) {
+    .feature-strip .row > div + div { margin-top: 1.5rem; }
+    .rec-stats { flex-direction: column; }
+    .rec-stat-cell { border-right: none; border-bottom: 1px solid #E5E7EB; }
+    .rec-stat-cell:last-child { border-bottom: none; }
+}
+
+@media (max-width: 767px) {
+    .hero-cta-group { flex-direction: column; }
+    .btn-hero-primary,
+    .btn-hero-secondary { text-align: center; }
+    .planner-wrap { padding: 1.5rem 1rem 2.5rem; }
+    .college-header-card h2 { font-size: 1.15rem; }
+    .compare-table thead th,
+    .compare-table tbody th { font-size: .72rem; }
+    .page-wrap { padding: 1.25rem .85rem 2rem; }
+}
+
+@media (max-width: 480px) {
+    .rec-header { flex-direction: column; }
+    .prob-indicator { width: 100%; flex-direction: row; justify-content: space-between; }
+    .hero-stat-num { font-size: 1.5rem; }
+}

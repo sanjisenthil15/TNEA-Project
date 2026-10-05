@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Admission Planner — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ── Full-screen loading spinner ── */
+  #plannerSpinner {
+    display: none;
+    position: fixed; 
+    inset: 0;
+    background: rgba(11, 19, 43, 0.85);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.25rem;
+    backdrop-filter: blur(8px);
+  }
+  #plannerSpinner.active { 
+    display: flex; 
+  }
+  #plannerSpinner p { 
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem; 
+    font-weight: 700; 
+    color: #F8FAFC; 
+    margin: 0; 
+    letter-spacing: 0.05em;
+  }
+</style>
+
+<!-- Loading Spinner -->
+<div id="plannerSpinner" role="status" aria-live="polite">
+    <div class="spinner-border text-warning" style="width:3.5rem; height:3.5rem; border-width: 0.25em;" aria-hidden="true"></div>
+    <p>ANALYZING TNEA HISTORICAL CUTOFFS...</p>
+</div>
+
+<div class="planner-wrap">
+
+    <!-- Validation errors -->
+    {% if validation_error %}
+    <div class="alert alert-danger d-flex align-items-start gap-2 border-0 shadow-sm p-3 rounded-4 mb-4">
+        <i class="bi bi-exclamation-triangle-fill fs-5 mt-1" style="color:var(--c-danger);"></i>
+        <div>
+            <h6 class="fw-bold mb-1" style="color:var(--c-danger);">Validation Error</h6>
+            <p class="mb-0 text-muted" style="font-size:.85rem;">{{ validation_error }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Page Header -->
+    <div class="mb-5 text-center">
+        <h1 style="font-family:'Outfit', sans-serif; font-size:1.85rem; font-weight:800; color:var(--c-primary); letter-spacing:-.02em; margin-bottom:.5rem;">
+            Admission Planner
+        </h1>
+        <p style="font-size:.95rem; color:var(--c-muted); margin:0;">
+            Provide your academic metrics below to evaluate matching Tamil Nadu colleges.
+        </p>
+    </div>
+
+    <!-- Contextual Panel -->
+    <div class="alert alert-light border-0 shadow-sm p-4 rounded-3 mb-4 d-flex gap-3 align-items-start">
+        <i class="bi bi-info-circle-fill fs-5 text-muted"></i>
+        <p class="mb-0 text-muted small" style="line-height:1.6;">
+            Your results are matched against historical TNEA cutoff data using the selected community, branch, district and reference year.
+        </p>
+    </div>
+
+    <!-- Planner Card Form -->
+    <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+        <form action="/recommend" method="POST" id="plannerForm" novalidate>
+
+            <h6 class="fw-bold text-primary mb-3 mt-2" style="font-family:'Outfit', sans-serif; font-size:0.85rem; letter-spacing:0.05em; text-transform:uppercase;">
+                01 Your Profile
+            </h6>
+            
+            <div class="row g-4 mb-4 pb-4 border-bottom">
+                <!-- Cutoff -->
+                <div class="col-md-6">
+                    <label class="form-section-label" for="cutoff">Cutoff</label>
+                    <div class="position-relative">
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="200"
+                            class="portal-input pe-5"
+                            id="cutoff"
+                            name="cutoff"
+                            value="{{ selected_cutoff or (profile.cutoff if profile else '') }}"
+                            placeholder="e.g. 185.50"
+                            required
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="right"
+                            title="Enter your TNEA aggregate cutoff mark (0.00 to 200.00)">
+                        <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted fw-bold" style="font-size:0.8rem;">/ 200</span>
+                    </div>
+                </div>
+
+                <!-- Community -->
+                <div class="col-md-6">
+                    <label class="form-section-label" for="community">Community</label>
+                    <div class="select-wrap">
+                        <select class="portal-select" id="community" name="community" required>
+                            {% for community in communities %}
+                            <option value="{{ community }}" {% if (selected_community and selected_community == community) or (not selected_community and profile and profile.community == community) %}selected{% endif %}>{{ community }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <h6 class="fw-bold text-primary mb-3" style="font-family:'Outfit', sans-serif; font-size:0.85rem; letter-spacing:0.05em; text-transform:uppercase;">
+                02 Course Preference
+            </h6>
+            
+            <!-- Branch -->
+            <div class="mb-4 pb-4 border-bottom">
+                <label class="form-section-label" for="branch">Preferred Branch</label>
+                <div class="select-wrap">
+                    <select class="portal-select" id="branch" name="branch" required>
+                        {% for branch in branches %}
+                        <option value="{{ branch['branch_code'] }}" {% if selected_branch and selected_branch == branch['branch_code'] %}selected{% endif %}>{{ branch['branch_name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <h6 class="fw-bold text-primary mb-3" style="font-family:'Outfit', sans-serif; font-size:0.85rem; letter-spacing:0.05em; text-transform:uppercase;">
+                03 Location
+            </h6>
+            
+            <!-- District -->
+            <div class="mb-4 pb-4 border-bottom">
+                <label class="form-section-label" for="district">
+                    Preferred District <span style="font-weight:400; color:var(--c-muted); text-transform:none;">(optional)</span>
+                </label>
+                <div class="select-wrap">
+                    <select class="portal-select" id="district" name="district">
+                        <option value="">All Districts (No Filter)</option>
+                        {% for district in districts %}
+                        <option value="{{ district }}" {% if (selected_district and selected_district == district) or (not selected_district and profile and profile.preferred_district == district) %}selected{% endif %}>{{ district }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <h6 class="fw-bold text-primary mb-3" style="font-family:'Outfit', sans-serif; font-size:0.85rem; letter-spacing:0.05em; text-transform:uppercase;">
+                04 Reference Data
+            </h6>
+
+            <!-- Year -->
+            <div class="mb-5">
+                <label class="form-section-label" for="year">Counselling Year</label>
+                <div class="select-wrap">
+                    <select class="portal-select" id="year" name="year">
+                        {% for year in years %}
+                        <option value="{{ year }}">{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Submit button -->
+            <button type="submit" class="btn-submit-full" id="submitBtn">
+                View Matching Colleges
+            </button>
+
+        </form>
+    </div>
+
+    <!-- Info Note Alert -->
+    <div class="alert alert-light d-flex align-items-start gap-2 border shadow-sm p-4 rounded-3 mt-4">
+        <i class="bi bi-exclamation-triangle-fill text-muted fs-5 mt-1"></i>
+        <div>
+            <h6 class="fw-bold mb-1 text-primary">Admission Advisory Note</h6>
+            <p class="mb-0 text-muted small" style="line-height:1.55;">
+                Recommendations represent estimations derived from official historical records. Fluctuations in annual candidate counts can affect final cutoff ranks. Use these results alongside formal counselling materials.
+            </p>
+        </div>
+    </div>
+    
+    <!-- TNEA Counseling Guidance Section -->
+    <div class="card border shadow-sm rounded-3 mt-4 bg-white">
+        <div class="card-header bg-white text-primary p-4 fw-bold border-bottom d-flex align-items-center gap-2" style="font-family:'Outfit', sans-serif;">
+            <i class="bi bi-book"></i> Counselling Guidance
+        </div>
+        <div class="p-4">
+            <h6 class="fw-bold text-primary mb-3">Choice Filling Strategy</h6>
+            <ul class="mb-0 text-muted small" style="line-height: 1.7;">
+                <li><strong>Rule 1:</strong> Place <span class="fw-bold">Strong Match</span> options in choices 1–5 (Colleges you wish for but are slightly out of reach).</li>
+                <li><strong>Rule 2:</strong> Place <span class="fw-bold">Realistic</span> options in choices 6–15 (Colleges where your odds are very high).</li>
+                <li><strong>Rule 3:</strong> Secure <span class="fw-bold">Safer Options</span> at the bottom (Colleges where admission is nearly guaranteed to avoid sliding out of counselling).</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+
+    /* Bootstrap tooltips initialization */
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el, { trigger: 'hover focus' });
+    });
+
+    /* Form submit blocker and spinner toggling */
+    var form    = document.getElementById("plannerForm");
+    var btn     = document.getElementById("submitBtn");
+    var spinner = document.getElementById("plannerSpinner");
+
+    form.addEventListener("submit", function (e) {
+        if (!form.checkValidity()) return;
+        var cv = parseFloat(document.getElementById("cutoff").value);
+        if (isNaN(cv) || cv < 0 || cv > 200) {
+            e.preventDefault();
+            document.getElementById("cutoff").setCustomValidity("Please enter a cutoff score between 0 and 200.");
+            document.getElementById("cutoff").reportValidity();
+            return;
+        }
+        document.getElementById("cutoff").setCustomValidity("");
+        btn.disabled    = true;
+        btn.innerHTML   = "<span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span> Processing...";
+        spinner.classList.add("active");
+    });
+}());
+</script>
+{% endblock %}

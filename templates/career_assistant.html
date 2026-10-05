@@ -1,0 +1,1181 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<!-- ── Minimal Top Navigation & Identity Bar ── -->
+<div class="assistant-top-bar">
+    <div class="container-xxl px-3 px-lg-4 d-flex align-items-center justify-content-between py-2">
+        <div class="d-flex align-items-center gap-3">
+            <div class="assistant-brand-badge">
+                <i class="bi bi-stars"></i>
+            </div>
+            <div>
+                <h1 class="assistant-title mb-0">AI Assistant</h1>
+                <span class="assistant-subtitle">Conversational guidance &bull; General intelligence &bull; TNEA verified knowledge</span>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            {% if profile %}
+            <div class="student-pill d-none d-sm-flex align-items-center gap-2">
+                <span class="status-indicator"></span>
+                <span class="small fw-semibold text-dark">{{ current_user.name if current_user else 'Student' }}</span>
+                <span class="badge bg-white text-secondary border px-1" style="font-size:0.7rem;">Cutoff: {{ "%.2f"|format(profile.cutoff) }}</span>
+            </div>
+            {% endif %}
+            <a href="{{ url_for('planner') }}" class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex align-items-center gap-1">
+                <i class="bi bi-calculator"></i> Planner
+            </a>
+            <a href="{{ url_for('career_guidance') }}" class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex align-items-center gap-1">
+                <i class="bi bi-file-earmark-person"></i> Report
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ── Main Conversational Workspace ── -->
+<div class="container-xxl px-3 px-lg-4 py-3 assistant-page-container">
+    <div class="assistant-workspace-grid">
+
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- 1. LEFT SIDEBAR: Conversation History Threads -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <aside class="assistant-sidebar-col d-none d-lg-flex flex-column">
+            <div class="assistant-sidebar-card">
+                <!-- New Chat Button -->
+                <button type="button" class="btn-new-chat w-100 mb-3" id="sidebarNewChatBtn">
+                    <i class="bi bi-plus-lg me-1"></i> New Conversation
+                </button>
+
+                <div class="sidebar-section-title">
+                    <span>Conversations</span>
+                </div>
+
+                <!-- Conversations List -->
+                <div class="conversations-history-list flex-grow-1" id="conversationsList">
+                    {% if conversations %}
+                    {% for conv in conversations %}
+                    <div class="conversation-item {% if conversation and conversation.id == conv.id %}active-conv{% endif %}" data-conv-id="{{ conv.id }}">
+                        <a href="{{ url_for('career_assistant_view', session_id=conv.id) }}" class="conv-link text-truncate">
+                            <i class="bi bi-chat-left-text conv-icon"></i>
+                            <span class="conv-title text-truncate">{{ conv.title or 'Guidance Session' }}</span>
+                        </a>
+                        {% if conversations|length > 1 %}
+                        <button type="button" class="btn-delete-conv delete-conv-btn" data-conv-id="{{ conv.id }}" title="Delete conversation">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-muted small py-4 text-center">
+                        <i class="bi bi-chat-square-dots d-block fs-5 mb-1 opacity-50"></i>
+                        No previous chats.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Footer / Status -->
+                <div class="sidebar-footer">
+                    <div class="d-flex align-items-center gap-2 text-muted small" style="font-size:0.75rem;">
+                        <i class="bi bi-shield-check text-success"></i>
+                        <span>Private &amp; Secure Session</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- 2. CENTER: Main Conversational Stage -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <main class="assistant-chat-col">
+            <div class="assistant-chat-stage">
+                
+                <!-- Chat Window Header -->
+                <div class="chat-stage-header">
+                    <div class="d-flex align-items-center gap-2 min-w-0">
+                        <div class="header-avatar">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="chat-session-title mb-0 text-truncate" id="currentConvTitle">
+                                {{ conversation.title if conversation else 'Career Guidance & Intelligence' }}
+                            </h2>
+                            <span class="chat-session-status text-muted">
+                                Multi-turn memory active &bull; LLM + RAG + TNEA Tools
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Header Actions -->
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-light border py-1 px-2 d-lg-none" id="mobileNewChatBtn">
+                            <i class="bi bi-plus-lg"></i> New
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light border text-muted py-1 px-2" id="clearChatBtn" title="Clear current session messages">
+                            <i class="bi bi-eraser me-1"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Stream Area -->
+                <div class="chat-messages-stream" id="chatMessagesContainer">
+                    
+                    <!-- Clean Welcome State (Shown when session is empty) -->
+                    {% if not messages %}
+                    <div class="chat-welcome-state" id="emptyStateWelcome">
+                        <div class="welcome-badge">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <h3 class="welcome-heading">How can I help you today?</h3>
+                        <p class="welcome-subtext">
+                            Ask me anything — from everyday questions, programming, and sciences to engineering branches, TNEA cutoffs, and counselling strategies.
+                        </p>
+
+                        <!-- Suggestion Chips Grid -->
+                        <div class="welcome-suggestions-grid" id="welcomeSuggestions">
+                            <button type="button" class="welcome-chip" data-prompt="Why should I choose Computer Science (CSE)?">
+                                <i class="bi bi-code-slash text-primary me-2"></i>
+                                <span>Why should I choose Computer Science (CSE)?</span>
+                            </button>
+                            <button type="button" class="welcome-chip" data-prompt="Explain the difference between CSE and AI&DS.">
+                                <i class="bi bi-layers text-primary me-2"></i>
+                                <span>Explain the difference between CSE and AI&DS</span>
+                            </button>
+                            <button type="button" class="welcome-chip" data-prompt="How should I structure my TNEA 3-Tier preference list?">
+                                <i class="bi bi-list-ol text-primary me-2"></i>
+                                <span>How should I structure my TNEA 3-Tier preference list?</span>
+                            </button>
+                            <button type="button" class="welcome-chip" data-prompt="Tell me about Sri Eshwar College of Engineering.">
+                                <i class="bi bi-building text-primary me-2"></i>
+                                <span>Tell me about Sri Eshwar College of Engineering</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Stored Conversation Messages -->
+                    {% for msg in messages %}
+                    <div class="chat-msg-row {% if msg.role == 'user' %}msg-user{% else %}msg-assistant{% endif %}">
+                        {% if msg.role != 'user' %}
+                        <div class="msg-avatar assistant-avatar flex-shrink-0">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        {% endif %}
+                        <div class="msg-bubble {% if msg.role == 'user' %}bubble-user{% else %}bubble-assistant{% endif %}">
+                            <div class="msg-text formatted-text">{{ msg.content }}</div>
+                        </div>
+                        {% if msg.role == 'user' %}
+                        <div class="msg-avatar user-avatar flex-shrink-0">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <!-- Typing Indicator -->
+                    <div class="chat-msg-row msg-assistant d-none" id="typingIndicator">
+                        <div class="msg-avatar assistant-avatar flex-shrink-0">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        <div class="msg-bubble bubble-assistant typing-bubble">
+                            <div class="typing-indicator-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Dynamic Contextual Follow-Up Suggestions Bar (Subtle) -->
+                <div class="contextual-followups-bar d-none" id="followupsBar">
+                    <span class="followups-label text-muted">
+                        <i class="bi bi-lightbulb me-1"></i> Follow-up:
+                    </span>
+                    <div class="followups-chips-list" id="suggestionsContainer"></div>
+                </div>
+
+                <!-- Polished Message Composer -->
+                <div class="chat-composer-section">
+                    <form id="chatForm" class="composer-form">
+                        <input type="hidden" id="conversationId" value="{{ conversation.id if conversation else '' }}">
+                        <div class="composer-input-box">
+                            <textarea id="userInput" class="composer-textarea" rows="1" placeholder="Message AI Assistant (Ask anything, follow up naturally)..." required maxlength="1000"></textarea>
+                            <button type="submit" class="composer-send-btn" id="sendBtn" title="Send message">
+                                <i class="bi bi-arrow-up-circle-fill"></i>
+                            </button>
+                        </div>
+                        <div class="composer-footer-hints">
+                            <span class="text-muted">
+                                <i class="bi bi-shield-check me-1 text-success"></i> Grounded in verified TNEA data &bull; Web research enabled
+                            </span>
+                            <span class="text-muted d-none d-sm-inline">
+                                <strong>Enter</strong> to send &bull; <strong>Shift + Enter</strong> for new line
+                            </span>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- 3. RIGHT COLUMN: Student Profile Context (Clean & Compact) -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <aside class="assistant-profile-col d-none d-xl-flex flex-column">
+            <div class="profile-side-card">
+                <div class="profile-card-header">
+                    <span class="fw-bold small text-dark" style="font-size:0.85rem;">
+                        <i class="bi bi-person-badge text-primary me-1"></i> Student Context
+                    </span>
+                    {% if profile %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.68rem;">Verified</span>
+                    {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary" style="font-size:0.68rem;">Guest</span>
+                    {% endif %}
+                </div>
+
+                {% if profile %}
+                <div class="profile-card-body">
+                    <!-- Cutoff Metric -->
+                    <div class="metric-box mb-3">
+                        <div class="text-muted small" style="font-size:0.72rem;">Calculated Cutoff</div>
+                        <div class="d-flex align-items-baseline justify-content-between">
+                            <span class="metric-val">{{ "%.2f"|format(profile.cutoff) }}</span>
+                            <span class="text-muted small">/ 200</span>
+                        </div>
+                        <div class="metric-subtext mt-1">
+                            Quota: <strong>{{ profile.community }}</strong> &bull; {{ profile.preferred_district or 'Tamil Nadu' }}
+                        </div>
+                    </div>
+
+                    <!-- Top 3 Branches -->
+                    <div class="mb-3">
+                        <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.68rem; letter-spacing:0.04em;">
+                            Top Branch Alignments
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            {% for b in profile.top_branches[:3] %}
+                            <div class="branch-pill-item">
+                                <div class="text-truncate flex-grow-1">
+                                    <span class="badge bg-dark text-white me-1" style="font-size:0.62rem;">{{ b.branch_code }}</span>
+                                    <span class="branch-name text-truncate">{{ b.branch_name }}</span>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size:0.68rem;">
+                                    {{ b.fit_percentage }}%
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <a href="{{ url_for('career_guidance') }}" class="btn btn-sm btn-outline-primary w-100 py-1" style="font-size:0.75rem;">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> View Full Career Report
+                    </a>
+                </div>
+                {% else %}
+                <div class="profile-card-body text-center py-4">
+                    <i class="bi bi-clipboard-data text-muted fs-3 mb-2 d-block opacity-50"></i>
+                    <p class="text-muted small mb-3" style="font-size:0.76rem; line-height:1.45;">
+                        Complete your 16-question Career Assessment to personalize advice with your cutoff and cognitive strengths.
+                    </p>
+                    <a href="{{ url_for('career_guidance') }}" class="btn btn-sm btn-primary w-100" style="font-size:0.78rem;">
+                        Start Assessment
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="profile-card-footer text-muted small" style="font-size:0.7rem; line-height:1.4;">
+                    <i class="bi bi-info-circle me-1"></i> Verified data from official TNEA single-window counselling records (2023–2025).
+                </div>
+            </div>
+        </aside>
+
+    </div>
+</div>
+
+<style>
+/* ── Modern & Calm Assistant Styling ── */
+:root {
+    --chat-bg: #FFFFFF;
+    --chat-surface: #F8FAFC;
+    --chat-border: #E2E8F0;
+    --chat-border-subtle: #F1F5F9;
+    --chat-text: #0F172A;
+    --chat-text-muted: #64748B;
+    --chat-user-bubble: #0F172A;
+    --chat-user-text: #FFFFFF;
+    --chat-assistant-bubble: #FFFFFF;
+    --chat-accent: #2563EB;
+}
+
+.assistant-top-bar {
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--chat-border);
+}
+.assistant-brand-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #0F172A;
+    color: #F59E0B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+.assistant-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--chat-text);
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.01em;
+}
+.assistant-subtitle {
+    font-size: 0.74rem;
+    color: var(--chat-text-muted);
+    display: block;
+}
+.student-pill {
+    background: #F1F5F9;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+}
+.status-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10B981;
+}
+
+/* ── Workspace Grid ── */
+.assistant-workspace-grid {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr) 280px;
+    gap: 1.25rem;
+    align-items: start;
+    width: 100%;
+}
+@media (max-width: 1280px) {
+    .assistant-workspace-grid {
+        grid-template-columns: 250px minmax(0, 1fr);
+    }
+}
+@media (max-width: 991.98px) {
+    .assistant-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Left Sidebar Card ── */
+.assistant-sidebar-card {
+    background: #FFFFFF;
+    border: 1px solid var(--chat-border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 150px);
+    min-height: 600px;
+    max-height: 850px;
+}
+.btn-new-chat {
+    background: #0F172A;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.btn-new-chat:hover {
+    background: #1E293B;
+}
+.sidebar-section-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--chat-text-muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+}
+.conversations-history-list {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.conversation-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    transition: background 0.15s;
+    cursor: pointer;
+}
+.conversation-item:hover {
+    background: #F1F5F9;
+}
+.conversation-item.active-conv {
+    background: #EFF6FF;
+    border-left: 3px solid #2563EB;
+}
+.conv-link {
+    text-decoration: none;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-grow: 1;
+    min-width: 0;
+}
+.active-conv .conv-link {
+    color: #1D4ED8;
+    font-weight: 600;
+}
+.conv-icon {
+    font-size: 0.72rem;
+    color: var(--chat-text-muted);
+    flex-shrink: 0;
+}
+.btn-delete-conv {
+    background: none;
+    border: none;
+    color: #94A3B8;
+    padding: 0 0.2rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s, color 0.15s;
+}
+.btn-delete-conv:hover {
+    opacity: 1;
+    color: #DC2626;
+}
+.sidebar-footer {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--chat-border);
+    margin-top: 0.5rem;
+}
+
+/* ── Center Chat Stage ── */
+.assistant-chat-stage {
+    background: #FFFFFF;
+    border: 1px solid var(--chat-border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 150px);
+    min-height: 600px;
+    max-height: 850px;
+    overflow: hidden;
+}
+.chat-stage-header {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--chat-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFFFFF;
+}
+.header-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #F1F5F9;
+    color: #0F172A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.chat-session-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--chat-text);
+    font-family: 'Outfit', sans-serif;
+}
+.chat-session-status {
+    font-size: 0.7rem;
+    display: block;
+}
+
+/* ── Stream & Messages ── */
+.chat-messages-stream {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    background: #FAFAFA;
+    scrollbar-width: thin;
+}
+.chat-msg-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+}
+.chat-msg-row.msg-user {
+    justify-content: flex-end;
+}
+.chat-msg-row.msg-assistant {
+    justify-content: flex-start;
+}
+.msg-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    margin-top: 2px;
+}
+.assistant-avatar {
+    background: #0F172A;
+    color: #F59E0B;
+}
+.user-avatar {
+    background: #475569;
+    color: #FFFFFF;
+}
+.msg-bubble {
+    padding: 0.85rem 1.15rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    word-break: break-word;
+}
+.bubble-user {
+    background: var(--chat-user-bubble);
+    color: var(--chat-user-text);
+    border-radius: 16px;
+    border-top-right-radius: 4px;
+    max-width: 78%;
+}
+.bubble-assistant {
+    background: #FFFFFF;
+    color: var(--chat-text);
+    border: 1px solid var(--chat-border);
+    border-radius: 16px;
+    border-top-left-radius: 4px;
+    max-width: 86%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+/* ── Welcome State ── */
+.chat-welcome-state {
+    margin: auto;
+    max-width: 600px;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+.welcome-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #0F172A;
+    color: #F59E0B;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+}
+.welcome-heading {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--chat-text);
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 0.5rem;
+}
+.welcome-subtext {
+    font-size: 0.85rem;
+    color: var(--chat-text-muted);
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+}
+.welcome-suggestions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    text-align: left;
+}
+@media (max-width: 576px) {
+    .welcome-suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.welcome-chip {
+    background: #FFFFFF;
+    border: 1px solid var(--chat-border);
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.8rem;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    font-family: inherit;
+    line-height: 1.4;
+}
+.welcome-chip:hover {
+    border-color: #2563EB;
+    background: #F8FAFC;
+    color: #1E293B;
+}
+
+/* ── Typing Indicator Dots ── */
+.typing-bubble {
+    padding: 0.65rem 1rem;
+}
+.typing-indicator-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.typing-indicator-dots span {
+    width: 6px;
+    height: 6px;
+    background: #94A3B8;
+    border-radius: 50%;
+    animation: typingBounce 1.3s infinite ease-in-out;
+}
+.typing-indicator-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── Contextual Followups Bar ── */
+.contextual-followups-bar {
+    padding: 0.45rem 1.25rem;
+    background: #FFFFFF;
+    border-top: 1px solid var(--chat-border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.followups-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.followups-chips-list {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.followup-chip-btn {
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.74rem;
+    color: #334155;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+.followup-chip-btn:hover {
+    background: #EFF6FF;
+    border-color: #93C5FD;
+    color: #1D4ED8;
+}
+
+/* ── Composer Section ── */
+.chat-composer-section {
+    padding: 0.85rem 1.25rem 1rem 1.25rem;
+    background: #FFFFFF;
+    border-top: 1px solid var(--chat-border);
+}
+.composer-input-box {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    background: #F8FAFC;
+    border: 1px solid var(--chat-border);
+    border-radius: 12px;
+    padding: 0.45rem 0.65rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.composer-input-box:focus-within {
+    border-color: #2563EB;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.composer-textarea {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    resize: none;
+    max-height: 140px;
+    padding: 0.25rem;
+    font-family: inherit;
+    color: var(--chat-text);
+}
+.composer-send-btn {
+    background: none;
+    border: none;
+    color: #0F172A;
+    font-size: 1.6rem;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, transform 0.1s ease;
+}
+.composer-send-btn:hover {
+    color: #2563EB;
+    transform: scale(1.05);
+}
+.composer-send-btn:disabled {
+    color: #CBD5E1;
+    cursor: not-allowed;
+    transform: none;
+}
+.composer-footer-hints {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0.2rem 0 0.2rem;
+    font-size: 0.7rem;
+}
+
+/* ── Right Profile Panel ── */
+.profile-side-card {
+    background: #FFFFFF;
+    border: 1px solid var(--chat-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.profile-card-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--chat-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FAFAFA;
+}
+.profile-card-body {
+    padding: 1rem;
+}
+.metric-box {
+    background: #F8FAFC;
+    border: 1px solid var(--chat-border);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+}
+.metric-val {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: #0F172A;
+}
+.metric-subtext {
+    font-size: 0.72rem;
+    color: var(--chat-text-muted);
+}
+.branch-pill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.5rem;
+    background: #F8FAFC;
+    border: 1px solid var(--chat-border);
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+.branch-name {
+    color: #334155;
+    font-weight: 500;
+}
+.profile-card-footer {
+    padding: 0.65rem 1rem;
+    border-top: 1px solid var(--chat-border);
+    background: #FAFAFA;
+}
+
+/* ── Code Blocks & Markdown in Assistant Bubble ── */
+.formatted-text pre {
+    background: #0F172A;
+    color: #F8FAFC;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    position: relative;
+    margin: 0.65rem 0;
+    font-size: 0.82rem;
+    overflow-x: auto;
+}
+.code-copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #1E293B;
+    border: 1px solid #334155;
+    color: #CBD5E1;
+    font-size: 0.68rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.85;
+}
+.code-copy-btn:hover {
+    background: #334155;
+    color: #FFFFFF;
+}
+.formatted-text table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.65rem 0;
+    font-size: 0.8rem;
+}
+.formatted-text th, .formatted-text td {
+    border: 1px solid var(--chat-border);
+    padding: 0.45rem 0.65rem;
+}
+.formatted-text th {
+    background: #F8FAFC;
+    font-weight: 600;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chatForm');
+    const userInput = document.getElementById('userInput');
+    const conversationIdInput = document.getElementById('conversationId');
+    const chatContainer = document.getElementById('chatMessagesContainer');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const sendBtn = document.getElementById('sendBtn');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    const sidebarNewChatBtn = document.getElementById('sidebarNewChatBtn');
+    const mobileNewChatBtn = document.getElementById('mobileNewChatBtn');
+    const currentConvTitle = document.getElementById('currentConvTitle');
+    const followupsBar = document.getElementById('followupsBar');
+    const suggestionsContainer = document.getElementById('suggestionsContainer');
+
+    let isSending = false;
+
+    // Auto scroll to bottom
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Auto-grow textarea
+    function autoResizeTextarea() {
+        userInput.style.height = 'auto';
+        userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
+    }
+    userInput.addEventListener('input', autoResizeTextarea);
+
+    // Enhanced Markdown parser with code blocks, copy button, links, tables, and typography
+    function formatMessageText(text) {
+        if (!text) return '';
+        let escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Fenced code blocks ```lang ... ``` with copy button
+        escaped = escaped.replace(/```([a-zA-Z0-9_\-]*)\n([\s\S]*?)```/g, function(match, lang, code) {
+            return `<div class="position-relative my-2"><pre><code>${code}</code></pre><button type="button" class="code-copy-btn" onclick="copyCodeSnippet(this)">Copy</button></div>`;
+        });
+
+        // Inline code `code`
+        escaped = escaped.replace(/`([^`]+)`/g, '<code style="background:#F1F5F9; color:#E11D48; padding:0.15rem 0.35rem; border-radius:4px; font-size:0.85em; font-family:monospace; border:1px solid #E2E8F0;">$1</code>');
+
+        // Markdown Tables
+        if (escaped.includes('|')) {
+            const lines = escaped.split('\n');
+            let inTable = false;
+            let tableHtml = '<div class="table-responsive my-2"><table class="table table-sm table-bordered">';
+            let newLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.startsWith('|') && line.endsWith('|')) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableHtml = '<div class="table-responsive my-2"><table class="table table-sm table-bordered"><tbody>';
+                    }
+                    if (line.includes('---')) continue; // separator row
+
+                    const cells = line.split('|').slice(1, -1).map(c => c.trim());
+                    tableHtml += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+                } else {
+                    if (inTable) {
+                        inTable = false;
+                        tableHtml += '</tbody></table></div>';
+                        newLines.push(tableHtml);
+                    }
+                    newLines.push(line);
+                }
+            }
+            if (inTable) {
+                tableHtml += '</tbody></table></div>';
+                newLines.push(tableHtml);
+            }
+            escaped = newLines.join('\n');
+        }
+
+        // Headers
+        escaped = escaped.replace(/^### (.*$)/gim, '<h5 class="fw-bold mb-1 mt-3 text-dark" style="font-family:\'Outfit\', sans-serif; font-size:0.95rem;">$1</h5>');
+        escaped = escaped.replace(/^## (.*$)/gim, '<h4 class="fw-bold mb-2 mt-3 text-dark" style="font-family:\'Outfit\', sans-serif; font-size:1.02rem;">$1</h4>');
+
+        // Bold & Italic
+        escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+        // Markdown Links [text](url)
+        escaped = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-primary text-decoration-underline fw-semibold">$1</a>');
+
+        // Bullet points
+        escaped = escaped.replace(/^[•\*] (.*$)/gim, '<div class="d-flex align-items-baseline gap-2 mb-1" style="font-size:0.88rem;"><i class="bi bi-circle-fill text-primary flex-shrink-0" style="font-size:0.3rem; transform:translateY(-2px);"></i><span>$1</span></div>');
+
+        // Numbered lists
+        escaped = escaped.replace(/^(\d+)\. (.*$)/gim, '<div class="mb-1" style="font-size:0.88rem;"><strong>$1.</strong> $2</div>');
+
+        // Paragraph newlines
+        escaped = escaped.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+        return escaped;
+    }
+
+    window.copyCodeSnippet = function(btn) {
+        const pre = btn.parentElement.querySelector('pre code');
+        if (pre) {
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = orig; }, 2000);
+            });
+        }
+    };
+
+    // Apply formatting to existing messages
+    document.querySelectorAll('.formatted-text').forEach(el => {
+        el.innerHTML = formatMessageText(el.textContent);
+    });
+
+    // Append User Message to UI
+    function appendUserMessage(text) {
+        const welcomeEl = document.getElementById('emptyStateWelcome');
+        if (welcomeEl) {
+            welcomeEl.remove();
+        }
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg-row msg-user';
+        msgDiv.innerHTML = `
+            <div class="msg-bubble bubble-user">
+                <div class="msg-text">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            </div>
+            <div class="msg-avatar user-avatar flex-shrink-0">
+                <i class="bi bi-person-fill"></i>
+            </div>
+        `;
+        chatContainer.insertBefore(msgDiv, typingIndicator);
+        scrollToBottom();
+    }
+
+    // Append Assistant Message to UI
+    function appendAssistantMessage(text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg-row msg-assistant';
+        msgDiv.innerHTML = `
+            <div class="msg-avatar assistant-avatar flex-shrink-0">
+                <i class="bi bi-stars"></i>
+            </div>
+            <div class="msg-bubble bubble-assistant">
+                <div class="msg-text formatted-text">${formatMessageText(text)}</div>
+            </div>
+        `;
+        chatContainer.insertBefore(msgDiv, typingIndicator);
+        scrollToBottom();
+    }
+
+    // Render Dynamic Follow-Up Suggestions
+    function updateSuggestions(suggestions) {
+        if (!suggestions || suggestions.length === 0) {
+            if (followupsBar) followupsBar.classList.add('d-none');
+            return;
+        }
+        suggestionsContainer.innerHTML = '';
+        suggestions.forEach(s => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'followup-chip-btn';
+            btn.textContent = s;
+            btn.addEventListener('click', function() {
+                sendMessage(this.textContent.trim());
+            });
+            suggestionsContainer.appendChild(btn);
+        });
+        if (followupsBar) followupsBar.classList.remove('d-none');
+    }
+
+    // Send Message Handler
+    async function sendMessage(overrideText) {
+        if (isSending) return;
+        const msg = overrideText || userInput.value.trim();
+        if (!msg) return;
+
+        isSending = true;
+        appendUserMessage(msg);
+        userInput.value = '';
+        userInput.style.height = 'auto';
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+
+        if (followupsBar) followupsBar.classList.add('d-none');
+
+        // Show typing indicator
+        typingIndicator.classList.remove('d-none');
+        scrollToBottom();
+
+        try {
+            const response = await fetch("{{ url_for('career_assistant_chat') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: msg,
+                    conversation_id: conversationIdInput.value
+                })
+            });
+
+            const data = await response.json();
+
+            // Hide typing indicator
+            typingIndicator.classList.add('d-none');
+
+            if (data.status === 'success') {
+                if (data.conversation_id) {
+                    conversationIdInput.value = data.conversation_id;
+                }
+                if (data.conversation_title && currentConvTitle) {
+                    currentConvTitle.textContent = data.conversation_title;
+                }
+                appendAssistantMessage(data.response);
+                if (data.followups) {
+                    updateSuggestions(data.followups);
+                }
+            } else {
+                appendAssistantMessage(data.message || "The AI Assistant is temporarily unavailable. Please try again.");
+            }
+        } catch (error) {
+            typingIndicator.classList.add('d-none');
+            appendAssistantMessage("The AI Assistant is temporarily unavailable. Your student profile and tools remain accessible.");
+        } finally {
+            isSending = false;
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+            scrollToBottom();
+        }
+    }
+
+    // Form submission
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+
+    // Enter to Send, Shift+Enter for newline
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Connect Initial Welcome Suggestion Chips
+    document.querySelectorAll('.welcome-chip').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const prompt = this.getAttribute('data-prompt') || this.textContent.trim();
+            sendMessage(prompt);
+        });
+    });
+
+    // Clear Messages
+    clearChatBtn.addEventListener('click', async function() {
+        if (!confirm("Are you sure you want to clear the messages in this conversation?")) return;
+        try {
+            const res = await fetch("{{ url_for('career_assistant_clear') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ conversation_id: conversationIdInput.value })
+            });
+            const d = await res.json();
+            if (d.status === 'success') {
+                window.location.reload();
+            }
+        } catch (e) {
+            alert("Unable to clear conversation history at this moment.");
+        }
+    });
+
+    // New Chat Action
+    async function startNewChat() {
+        try {
+            const res = await fetch("{{ url_for('career_assistant_new') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            });
+            const d = await res.json();
+            if (d.status === 'success') {
+                window.location.href = "{{ url_for('career_assistant_view') }}?session_id=" + d.conversation_id;
+            }
+        } catch (e) {
+            alert("Unable to start a new session.");
+        }
+    }
+
+    if (sidebarNewChatBtn) sidebarNewChatBtn.addEventListener('click', startNewChat);
+    if (mobileNewChatBtn) mobileNewChatBtn.addEventListener('click', startNewChat);
+
+    // Delete Conversation Action
+    document.querySelectorAll('.delete-conv-btn').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            const convId = this.getAttribute('data-conv-id');
+            if (!confirm("Delete this conversation?")) return;
+            try {
+                const res = await fetch("{{ url_for('career_assistant_delete') }}", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ conversation_id: convId })
+                });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    window.location.href = "{{ url_for('career_assistant_view') }}";
+                }
+            } catch (err) {
+                alert("Unable to delete conversation.");
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

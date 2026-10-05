@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}{{ college.college_name }} — College Details{% endblock %}
+
+{% block content %}
+
+<div class="container py-4 py-md-5">
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# HERO COLLEGE HEADER                                        #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-md border-0 overflow-hidden" style="background: var(--c-primary); color: #fff;">
+        <div class="card-body p-4 p-md-5">
+          <div class="row align-items-center">
+
+            <div class="col-lg-8">
+              <span class="text-uppercase fw-bold text-warning mb-2 d-inline-block" style="font-size:.7rem; letter-spacing:.15em;">
+                Official TNEA Institution
+              </span>
+              <h2 class="fw-bold text-white mb-3 lh-sm" style="font-family:'Outfit', sans-serif; font-size:1.85rem;">
+                {{ college.college_name or 'College ' ~ college.college_code }}
+              </h2>
+              
+              <div class="d-flex flex-wrap gap-3 text-white-50" style="font-size:0.85rem; margin-bottom: 1.25rem;">
+                <span><i class="bi bi-geo-alt-fill text-danger"></i> 
+                  {%- set dist_disp = (college.district or '') | replace(' District','') | replace(' district','') | title -%}
+                  {{ dist_disp if dist_disp else 'District N/A' }}
+                  {%- if college.taluk %}, {{ college.taluk | title }}{% endif %}
+                </span>
+                <span><i class="bi bi-tag-fill text-warning"></i> Code: <strong>{{ college.college_code }}</strong></span>
+                {% if college.college_type %}
+                <span><i class="bi bi-info-circle-fill"></i> Type: <strong>{{ college.college_type }}</strong></span>
+                {% endif %}
+              </div>
+
+              {% if college.autonomous and college.autonomous|lower == 'yes' %}
+              <span class="badge bg-warning text-dark px-3 py-2 fw-bold" style="font-size:0.75rem;"><i class="bi bi-award-fill"></i> Autonomous Institution</span>
+              {% endif %}
+            </div>
+
+            <div class="col-lg-4 text-center mt-4 mt-lg-0 text-white-50">
+              <div class="mb-2"><i class="bi bi-building" style="font-size:3.5rem;"></i></div>
+              <span class="badge bg-white bg-opacity-10 text-white border border-white border-opacity-25 fs-6 px-3 py-2">
+                TNEA Code {{ college.college_code }}
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# FACILITIES AND DETAILS                                     #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm p-4 bg-white">
+
+        <h3 class="text-primary mb-4" style="font-family:'Outfit', sans-serif; font-size:1.15rem; font-weight:700;">
+          <i class="bi bi-building-fill text-secondary me-2"></i> Campus Profile &amp; Facilities
+        </h3>
+
+        <div class="row g-3">
+
+          <!-- Address -->
+          <div class="col-md-6">
+            <div class="p-card h-100 bg-light p-3 border-0 shadow-sm d-flex align-items-start gap-3">
+              <i class="bi bi-geo-alt fs-4 mt-1 text-primary"></i>
+              <div class="flex-grow-1">
+                <div class="form-section-label">Address</div>
+                <div class="info-value mb-3" style="font-size: 0.9rem; color: var(--c-text);">{{ college.address or 'Not Available' }}</div>
+                {% if college.address %}
+                <a href="https://www.google.com/maps/search/?api=1&query={{ (college.address ~ ' ' ~ (college.taluk or '') ~ ' ' ~ (college.district or '') ~ ' ' ~ (college.pincode or '')) | urlencode }}"
+                   target="_blank" rel="noopener noreferrer"
+                   class="btn btn-xs btn-outline-danger px-3 py-1 text-decoration-none rounded-pill"
+                   style="font-size:0.75rem;"
+                   data-bs-toggle="tooltip" title="Find this college on Google Maps">
+                  <i class="bi bi-map"></i> Locate on Google Maps
+                </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Phone -->
+          <div class="col-md-6 col-lg-3">
+            <div class="p-card h-100 bg-light p-3 border-0 shadow-sm d-flex align-items-start gap-3">
+              <i class="bi bi-telephone fs-4 mt-1 text-primary"></i>
+              <div>
+                <div class="form-section-label">Phone</div>
+                <div class="info-value">
+                  {% if college.phone %}
+                    <a href="tel:{{ college.phone }}" class="text-decoration-none text-primary fw-semibold" data-bs-toggle="tooltip" title="Call primary contact">
+                      {{ college.phone }}
+                    </a>
+                  {% else %}
+                    <span class="text-muted">Not Available</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="col-md-6 col-lg-3">
+            <div class="p-card h-100 bg-light p-3 border-0 shadow-sm d-flex align-items-start gap-3">
+              <i class="bi bi-envelope fs-4 mt-1 text-primary"></i>
+              <div class="min-w-0">
+                <div class="form-section-label">Email</div>
+                <div class="info-value">
+                  {% if college.email %}
+                    <a href="mailto:{{ college.email }}" class="text-decoration-none text-primary fw-semibold text-break" data-bs-toggle="tooltip" title="Email institution admissions">
+                      {{ college.email }}
+                    </a>
+                  {% else %}
+                    <span class="text-muted">Not Available</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- District -->
+          <div class="col-6 col-md-3">
+            <div class="p-card h-100 bg-light p-3 border-0 shadow-sm d-flex align-items-start gap-3">
+              <i class="bi bi-map fs-4 mt-1 text-primary"></i>
+              <div>
+                <div class="form-section-label">District</div>
+                <div class="info-value fw-semibold">
+                  {{ dist_disp if dist_disp else 'Not Available' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Taluk -->
+          <div class="col-6 col-md-3">
+            <div class="p-card h-100 bg-light p-3 border-0 shadow-sm d-flex align-items-start gap-3">
+              <i class="bi bi-buildings fs-4 mt-1 text-primary"></i>
+              <div>
+                <div class="form-section-label">Taluk</div>
+                <div class="info-value fw-semibold">{{ college.taluk or 'Not Available' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pincode -->
+          <div class="col-6 col-md-3">
+            <div class="p-card h-100 bg-light p-3 border-0 shadow-sm d-flex align-items-start gap-3">
+              <i class="bi bi-mailbox fs-4 mt-1 text-primary"></i>
+              <div>
+                <div class="form-section-label">Pincode</div>
+                <div class="info-value fw-semibold">{{ college.pincode or '—' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Website -->
+          <div class="col-md-6 col-lg-3">
+            <div class="p-card h-100 bg-light p-3 border-0 shadow-sm d-flex align-items-start gap-3">
+              <i class="bi bi-globe fs-4 mt-1 text-primary"></i>
+              <div>
+                <div class="form-section-label">Official Website</div>
+                <div class="info-value mt-1">
+                  {% if college.website and college.website.strip() %}
+                    {% set _w = college.website.strip() %}
+                    {% if _w.startswith('http://') or _w.startswith('https://') %}
+                      {% set website_url = _w %}
+                    {% else %}
+                      {% set website_url = 'https://' ~ _w %}
+                    {% endif %}
+                    <a href="{{ website_url }}" target="_blank" rel="noopener noreferrer"
+                       class="btn btn-sm btn-outline-primary px-3 py-1 rounded-pill"
+                       data-bs-toggle="tooltip" title="Open official website in new tab">
+                      <i class="bi bi-globe"></i> Visit Website
+                    </a>
+                  {% else %}
+                    <span class="text-muted">Unavailable</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Facility Indicators Row -->
+          <div class="col-12 mt-2">
+            <div class="row g-3">
+              
+              <!-- Autonomous -->
+              <div class="col-6 col-md-3">
+                <div class="p-card bg-light p-3 border-0 shadow-sm text-center">
+                  <div class="form-section-label mb-2">Autonomous</div>
+                  {% if college.autonomous and college.autonomous|lower == 'yes' %}
+                    <span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill"></i> Yes</span>
+                  {% else %}
+                    <span class="badge bg-secondary px-3 py-2 rounded-pill"><i class="bi bi-x-circle"></i> No</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Boys Hostel -->
+              <div class="col-6 col-md-3">
+                <div class="p-card bg-light p-3 border-0 shadow-sm text-center">
+                  <div class="form-section-label mb-2">Boys Hostel</div>
+                  {% if college.hostel_boys and college.hostel_boys|lower == 'yes' %}
+                    <span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill"></i> Yes</span>
+                  {% else %}
+                    <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="bi bi-x-circle"></i> No</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Girls Hostel -->
+              <div class="col-6 col-md-3">
+                <div class="p-card bg-light p-3 border-0 shadow-sm text-center">
+                  <div class="form-section-label mb-2">Girls Hostel</div>
+                  {% if college.hostel_girls and college.hostel_girls|lower == 'yes' %}
+                    <span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill"></i> Yes</span>
+                  {% else %}
+                    <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="bi bi-x-circle"></i> No</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Transport -->
+              <div class="col-6 col-md-3">
+                <div class="p-card bg-light p-3 border-0 shadow-sm text-center">
+                  <div class="form-section-label mb-2">Transport</div>
+                  {% if college.transport and college.transport|lower == 'yes' %}
+                    <span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill"></i> Yes</span>
+                  {% else %}
+                    <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="bi bi-x-circle"></i> No</span>
+                  {% endif %}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>{# /row g-3 #}
+      </div>
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# AVAILABLE BRANCHES                                         #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm p-4 bg-white">
+        <h3 class="text-primary mb-4" style="font-family:'Outfit', sans-serif; font-size:1.15rem; font-weight:700;">
+          <i class="bi bi-journal-bookmark-fill text-secondary me-2"></i> Offered Branches
+        </h3>
+        <div class="row g-3">
+          {% for branch in branches %}
+          <div class="col-md-6 col-lg-4">
+            <div class="p-card py-3 px-3 shadow-sm border border-opacity-50">
+              <p class="fw-bold mb-1 text-primary" style="font-size:.9rem;">{{ branch.branch_name }}</p>
+              <p class="text-muted mb-0 small"><i class="bi bi-cpu"></i> Branch Code: <strong>{{ branch.branch_code }}</strong></p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# INSTITUTIONAL PROFILE ANALYSIS                             #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card border shadow-sm p-4 bg-white">
+        <h3 class="text-primary mb-4" style="font-family:'Outfit', sans-serif; font-size:1.15rem; font-weight:700;">
+          <i class="bi bi-clipboard-data text-secondary me-2"></i> Institutional Profile Analysis
+        </h3>
+        <div class="alert alert-light mb-0 border p-4 rounded-3" style="border-left: 4px solid var(--c-primary) !important;">
+          <h5 class="fw-bold mb-2 text-primary" style="font-family:'Outfit', sans-serif;"><i class="bi bi-shield-check text-success me-1"></i> Career Assessment</h5>
+          <p class="text-muted" style="font-size:0.92rem; line-height:1.65;">
+            <strong>{{ college.college_name }}</strong> participates actively in TNEA admissions. Based on historical data, this institution is classified under counseling allocations for major engineering specializations.
+          </p>
+          <p class="text-muted mb-0" style="font-size:0.92rem; line-height:1.65;">
+            Evaluate previous counseling years' cutoffs for the community category you select. Changes in standard scores should be reviewed before finalizing preferences during choice-filling.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# BACK BUTTONS                                               #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="row mb-4 no-print text-center">
+    <div class="col-12 d-flex justify-content-center gap-3">
+      <button onclick="history.back()" class="btn btn-portal-outline"><i class="bi bi-chevron-left"></i> Back</button>
+      <a href="{{ url_for('planner') }}" class="btn btn-portal"><i class="bi bi-compass"></i> Planner</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- Back to top button -->
+<button id="backToTop" class="btn btn-portal rounded-circle shadow-lg position-fixed" style="bottom: 2rem; right: 1.5rem; width: 44px; height: 44px; display: none; align-items: center; justify-content: center; z-index:1039;" aria-label="Back to top" data-bs-toggle="tooltip" title="Back to top">
+  <i class="bi bi-arrow-up-short fs-4"></i>
+</button>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+
+    /* Tooltips initialization */
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el, { trigger: 'hover' });
+    });
+
+    /* Back-to-top floating button toggling */
+    var btt = document.getElementById("backToTop");
+    if(btt) {
+        window.addEventListener("scroll", function () {
+            if (window.scrollY > 350) {
+                btt.style.display = "flex";
+            } else {
+                btt.style.display = "none";
+            }
+        });
+        btt.addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+}());
+</script>
+{% endblock %}

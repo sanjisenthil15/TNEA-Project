@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Career Guidance - TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<!-- ── Guidance Hero Header ── -->
+<section class="py-5" style="background:var(--c-primary); color:#fff; border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div class="container py-4 text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <span class="hero-eyebrow mb-3">
+                    <i class="bi bi-compass"></i> Engineering Orientation &amp; Counseling Guidance
+                </span>
+                <h1 style="font-family:'Outfit', sans-serif; font-weight:800; font-size:clamp(1.9rem, 4vw, 2.75rem); letter-spacing:-0.02em; margin-bottom:1rem;">
+                    Personalised Career Guidance
+                </h1>
+                <p class="text-white-50 mx-auto" style="font-size:1.05rem; line-height:1.75; max-width:620px;">
+                    Understand your interests, strengths and learning preferences before choosing an engineering branch and counselling preferences.
+                </p>
+                <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                    <a href="{{ url_for('login', next=url_for('career_guidance')) }}" class="btn-portal-accent px-4 py-2" style="font-size:0.95rem;">
+                        <i class="bi bi-box-arrow-in-right"></i> Sign in to continue
+                    </a>
+                    <a href="{{ url_for('register', next=url_for('career_guidance')) }}" class="btn-hero-secondary px-4 py-2" style="font-size:0.95rem;">
+                        Create an account
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4 Structured Pillars ── -->
+<section class="py-5" style="background:var(--c-bg);">
+    <div class="container py-3">
+        <div class="text-center mb-5">
+            <span class="text-muted fw-bold text-uppercase" style="font-size:0.75rem; letter-spacing:0.08em;">Structured Methodology</span>
+            <h2 class="section-title justify-content-center border-0 mb-2 mt-1">How Career Guidance Works</h2>
+            <p class="text-muted mx-auto" style="max-width:580px; font-size:0.92rem;">
+                Our framework evaluates student preferences, academic strengths, and domain aptitudes to provide actionable branch clarity.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Pillar 1 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="p-card h-100 p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-person-check text-primary"></i>
+                    </div>
+                    <span class="text-muted fw-bold" style="font-size:0.75rem;">STAGE 01</span>
+                    <h5 class="fw-bold mt-1 mb-2" style="color:var(--c-primary); font-family:'Outfit', sans-serif;">Understand Yourself</h5>
+                    <p class="text-muted small mb-0" style="line-height:1.65;">
+                        Discover your natural analytical inclinations, problem-solving styles, and preferred learning environments.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pillar 2 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="p-card h-100 p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-diagram-3 text-primary"></i>
+                    </div>
+                    <span class="text-muted fw-bold" style="font-size:0.75rem;">STAGE 02</span>
+                    <h5 class="fw-bold mt-1 mb-2" style="color:var(--c-primary); font-family:'Outfit', sans-serif;">Explore Engineering Domains</h5>
+                    <p class="text-muted small mb-0" style="line-height:1.65;">
+                        Examine core disciplines (Mechanical, Civil, Electrical), computing fields, and emerging multi-disciplinary branches.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pillar 3 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="p-card h-100 p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-bullseye text-primary"></i>
+                    </div>
+                    <span class="text-muted fw-bold" style="font-size:0.75rem;">STAGE 03</span>
+                    <h5 class="fw-bold mt-1 mb-2" style="color:var(--c-primary); font-family:'Outfit', sans-serif;">Identify Suitable Branches</h5>
+                    <p class="text-muted small mb-0" style="line-height:1.65;">
+                        Align your TNEA cutoff score band and profile with realistic, high-potential engineering course paths.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pillar 4 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="p-card h-100 p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-signpost-2 text-primary"></i>
+                    </div>
+                    <span class="text-muted fw-bold" style="font-size:0.75rem;">STAGE 04</span>
+                    <h5 class="fw-bold mt-1 mb-2" style="color:var(--c-primary); font-family:'Outfit', sans-serif;">Build a Career Direction</h5>
+                    <p class="text-muted small mb-0" style="line-height:1.65;">
+                        Connect your branch choices directly to industry sectors, higher studies options, and counselling choice lists.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action Banner -->
+        <div class="p-card mt-5 p-4 p-md-5 text-center" style="background:#FFFFFF; border:1px solid var(--c-border);">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h4 class="fw-bold mb-2" style="color:var(--c-primary); font-family:'Outfit', sans-serif;">
+                        Ready to start your Career Evaluation?
+                    </h4>
+                    <p class="text-muted small mb-4">
+                        Sign in or register a student profile to save your responses, track your assessment progress, and access guided engineering advisory tools.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="{{ url_for('login', next=url_for('career_guidance')) }}" class="btn-portal px-4 py-2">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign in to continue
+                        </a>
+                        <a href="{{ url_for('register', next=url_for('career_guidance')) }}" class="btn-portal-outline px-4 py-2">
+                            Create Free Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

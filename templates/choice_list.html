@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}My TNEA Choice List & Preferences — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- ── Header Banner ── -->
+    <div class="card shadow-sm border-0 mb-4" style="background: linear-gradient(135deg, #0f1e36 0%, #1e3a63 100%); color: #ffffff; border-radius: 12px;">
+        <div class="card-body p-4 p-md-5">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-warning text-dark px-3 py-1 fw-semibold" style="font-size: 0.8rem;">
+                            <i class="bi bi-list-ol me-1"></i> TNEA PREFERENCE ORGANIZER
+                        </span>
+                        {% if is_premium_analysis %}
+                        <span class="badge bg-success text-white px-2 py-1 fw-bold" style="font-size: 0.75rem;">
+                            <i class="bi bi-stars"></i> Advanced Opportunity Analysis Active
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary text-white px-2 py-1" style="font-size: 0.75rem;">
+                            Basic List (Free Tier)
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <h1 class="h2 fw-bold text-white mb-2">My TNEA Choice List</h1>
+                    <p class="text-white-50 mb-3" style="font-size: 0.95rem; line-height: 1.6;">
+                        Review, arrange preference priority, inspect 3-year historical cutoffs (2023–2025), and export your choice list ready for official TNEA registration.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <a href="/planner" class="btn btn-warning btn-sm fw-semibold px-3 py-2">
+                            <i class="bi bi-plus-circle-fill me-1"></i> Add Choices from Planner
+                        </a>
+                        {% if not is_premium_analysis %}
+                        <a href="/premium?next=/choice-list&feature=choice_analysis" class="btn btn-outline-warning btn-sm fw-bold px-3 py-2">
+                            <i class="bi bi-stars text-warning me-1"></i> Unlock Opportunity Tiers (₹200)
+                        </a>
+                        {% endif %}
+                        {% if choices %}
+                        <button id="exportCsvBtn" class="btn btn-success btn-sm px-3 py-2">
+                            <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Export to CSV
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-white-50 small fw-semibold">Total Saved Choices</span>
+                            <span class="badge bg-warning text-dark fs-6" id="totalChoicesBadge">{{ total_choices }}</span>
+                        </div>
+                        <p class="small text-white-50 mb-0" style="font-size: 0.78rem;">
+                            {% if profile %}
+                            Benchmark: <strong class="text-white">{{ "%.2f"|format(student_cutoff) }}</strong> | Quota: <strong class="text-warning">{{ student_community }}</strong>
+                            {% else %}
+                            <a href="/career-guidance" class="text-warning text-decoration-none">Complete assessment</a> to link your cutoff and community.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Unauthenticated Notice ── -->
+    {% if not session.get('user_id') %}
+    <div class="alert alert-warning d-flex align-items-center mb-4 shadow-sm border-0" role="alert">
+        <i class="bi bi-shield-lock-fill fs-3 text-warning me-3"></i>
+        <div>
+            <h6 class="fw-bold mb-1">Personalized Cloud Storage Available</h6>
+            <span class="small">Sign in to sync your choice list to your private student account. Your preferences will be saved securely and accessible across all devices.</span>
+            <a href="/login?next=/choice-list" class="btn btn-sm btn-dark ms-3">Sign In Now</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Choices List Area ── -->
+    {% if choices %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-arrow-down-up text-primary me-2 fs-5"></i>
+                <div>
+                    <h5 class="fw-bold mb-0">Arranged Preferences</h5>
+                    <small class="text-muted">Use the <strong>Up/Down</strong> arrows or drag items to organize priority (1 = Highest Preference).</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button id="clearAllBtn" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash3 me-1"></i> Clear List
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body p-3 p-md-4">
+            <div id="choiceListWrapper" class="d-flex flex-column gap-3">
+                {% for item in choices %}
+                <div class="card border choice-card p-3 shadow-sm position-relative" 
+                     data-id="{{ item.id }}"
+                     data-code="{{ item.college_code }}" 
+                     data-branch="{{ item.branch_code }}"
+                     data-name="{{ item.college_name }}"
+                     data-district="{{ item.district or 'Tamil Nadu' }}"
+                     data-cutoff="{{ item.ref_cutoff or 'N/A' }}"
+                     style="transition: all 0.2s ease;">
+                    
+                    <div class="row align-items-center g-3">
+                        <!-- Priority Number & Reorder Controls -->
+                        <div class="col-auto text-center border-end pe-3">
+                            <span class="badge bg-dark rounded-pill fs-6 px-3 py-2 order-number" style="min-width: 42px;">
+                                #{{ item.preference_order }}
+                            </span>
+                            <div class="d-flex flex-column gap-1 mt-2">
+                                <button type="button" class="btn btn-sm btn-light border py-0 px-2 move-up-btn" title="Move Up in Preference" {% if loop.first %}disabled{% endif %}>
+                                    <i class="bi bi-chevron-up"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light border py-0 px-2 move-down-btn" title="Move Down in Preference" {% if loop.last %}disabled{% endif %}>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- College & Branch Info -->
+                        <div class="col-md-6 col-lg-7">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-light text-dark border small fw-bold">Code: {{ item.college_code }}</span>
+                                <span class="badge bg-light text-primary border small fw-bold">{{ item.branch_code }}</span>
+                                {% if item.autonomous and item.autonomous|lower == 'yes' %}
+                                <span class="badge bg-info-subtle text-info-emphasis border small">Autonomous</span>
+                                {% endif %}
+                                {% if is_premium_analysis %}
+                                <span class="badge {{ item.tier_class }} small">{{ item.tier }} Match</span>
+                                {% else %}
+                                <a href="/premium?next=/choice-list&feature=choice_analysis" class="badge bg-warning-subtle text-dark border small text-decoration-none" title="Unlock automated Dream/Target/Safe classification with ₹200 Premium Access">
+                                    <i class="bi bi-lock-fill text-warning me-1"></i> Tier Analysis (PRO)
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            <h6 class="fw-bold text-dark mb-1">
+                                <a href="/college/{{ item.college_code }}" class="text-decoration-none text-dark hover-primary">
+                                    {{ item.college_name or 'College ' ~ item.college_code }}
+                                </a>
+                            </h6>
+
+                            <div class="text-muted small mb-1">
+                                <i class="bi bi-cpu text-primary me-1"></i><strong>{{ item.branch_name or item.branch_code }}</strong>
+                            </div>
+
+                            <div class="text-muted small">
+                                <i class="bi bi-geo-alt text-danger me-1"></i>{{ item.district or 'Tamil Nadu' }}{% if item.taluk %}, {{ item.taluk }}{% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Historical Cutoff Benchmarks -->
+                        <div class="col-md-4 col-lg-3 text-md-end">
+                            <div class="p-2 bg-light rounded border text-start text-md-end">
+                                <span class="small fw-semibold text-muted d-block" style="font-size: 0.72rem;">Historical Cutoffs:</span>
+                                {% if item.historical_cutoffs %}
+                                    <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-1 mt-1">
+                                        {% for co in item.historical_cutoffs[:3] %}
+                                        <span class="badge bg-white text-dark border small" title="Year {{ co.year }} (OC: {{ co.oc or 'N/A' }} | BC: {{ co.bc or 'N/A' }})">
+                                            <strong>{{ co.year }}:</strong> {{ co.oc or 'N/A' }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="small text-muted">No historical cutoff record</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Remove Button -->
+                        <div class="col-auto text-end ms-auto">
+                            <button class="btn btn-outline-danger btn-sm remove-choice-btn" data-code="{{ item.college_code }}" data-branch="{{ item.branch_code }}" title="Remove this choice">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- ── Empty State ── -->
+    <div class="card shadow-sm border-0 py-5 text-center mb-4">
+        <div class="card-body">
+            <i class="bi bi-bookmark-star fs-1 text-muted mb-3 d-block"></i>
+            <h5 class="fw-bold text-dark">My Choice List is empty</h5>
+            <p class="text-muted small mb-4 mx-auto" style="max-width: 500px;">
+                Add colleges and branches from the Planner or College Search to start building your preference list.
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="/planner" class="btn btn-warning btn-sm px-3 py-2 fw-semibold text-dark">
+                    <i class="bi bi-compass-fill me-1"></i> Explore Colleges
+                </a>
+                <a href="/search" class="btn btn-outline-secondary btn-sm px-3 py-2">
+                    <i class="bi bi-search me-1"></i> Search Colleges
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Verification & Data Accuracy Note ── -->
+    <div class="card bg-light border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-info-circle-fill text-primary fs-5 mt-1"></i>
+                <div class="small text-muted" style="line-height: 1.5;">
+                    <strong>Choice Identity & Evaluation Notice:</strong> Each preference is uniquely identified by <code>college_code + branch_code</code>. You can list multiple branches from the same college (e.g. College X + CSE, College X + IT, College X + AI&DS) as separate distinct preferences. Cutoff references reflect verified 2023–2025 records. Future years (2026+) remain unreleased.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Choice List Interactive Scripts ── -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const wrapper = document.getElementById('choiceListWrapper');
+
+    // Update Preference Numbers and Enable/Disable buttons
+    function updateOrderNumbers() {
+        if (!wrapper) return;
+        const cards = wrapper.querySelectorAll('.choice-card');
+        const itemsToSave = [];
+
+        cards.forEach((card, index) => {
+            const orderSpan = card.querySelector('.order-number');
+            if (orderSpan) orderSpan.innerText = '#' + (index + 1);
+
+            const upBtn = card.querySelector('.move-up-btn');
+            const downBtn = card.querySelector('.move-down-btn');
+            if (upBtn) upBtn.disabled = (index === 0);
+            if (downBtn) downBtn.disabled = (index === cards.length - 1);
+
+            itemsToSave.push({
+                college_code: card.getAttribute('data-code'),
+                branch_code: card.getAttribute('data-branch')
+            });
+        });
+
+        // Save reordered list via API
+        fetch('/api/choice-list/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: itemsToSave })
+        }).catch(err => console.error('Reorder save error:', err));
+    }
+
+    // Move Up
+    if (wrapper) {
+        wrapper.addEventListener('click', function(e) {
+            const upBtn = e.target.closest('.move-up-btn');
+            if (upBtn && !upBtn.disabled) {
+                const card = upBtn.closest('.choice-card');
+                const prev = card.previousElementSibling;
+                if (prev) {
+                    wrapper.insertBefore(card, prev);
+                    updateOrderNumbers();
+                }
+            }
+
+            // Move Down
+            const downBtn = e.target.closest('.move-down-btn');
+            if (downBtn && !downBtn.disabled) {
+                const card = downBtn.closest('.choice-card');
+                const next = card.nextElementSibling;
+                if (next) {
+                    wrapper.insertBefore(next, card);
+                    updateOrderNumbers();
+                }
+            }
+
+            // Remove Item
+            const removeBtn = e.target.closest('.remove-choice-btn');
+            if (removeBtn) {
+                const code = removeBtn.getAttribute('data-code');
+                const branch = removeBtn.getAttribute('data-branch');
+                const card = removeBtn.closest('.choice-card');
+
+                if (confirm('Remove this choice from your preference list?')) {
+                    fetch('/api/choice-list/remove', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ college_code: code, branch_code: branch })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        card.remove();
+                        const badge = document.getElementById('totalChoicesBadge');
+                        if (badge) badge.innerText = data.total_count;
+                        updateOrderNumbers();
+                        if (data.total_count === 0) {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(err => console.error('Remove error:', err));
+                }
+            }
+        });
+    }
+
+    // Clear All
+    const clearBtn = document.getElementById('clearAllBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear your entire choice list?')) {
+                fetch('/api/choice-list/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(() => window.location.reload())
+                .catch(err => console.error('Clear error:', err));
+            }
+        });
+    }
+
+    // Export CSV
+    const exportBtn = document.getElementById('exportCsvBtn');
+    if (exportBtn && wrapper) {
+        exportBtn.addEventListener('click', function() {
+            const cards = wrapper.querySelectorAll('.choice-card');
+            if (cards.length === 0) {
+                alert('Your choice list is empty.');
+                return;
+            }
+
+            let csv = 'Preference_Order,College_Code,College_Name,Branch_Code,District,Ref_Cutoff\n';
+            cards.forEach((card, idx) => {
+                const order = idx + 1;
+                const code = card.getAttribute('data-code');
+                const name = '"' + (card.getAttribute('data-name') || '').replace(/"/g, '""') + '"';
+                const branch = card.getAttribute('data-branch');
+                const district = '"' + (card.getAttribute('data-district') || '').replace(/"/g, '""') + '"';
+                const cutoff = card.getAttribute('data-cutoff') || 'N/A';
+
+                csv += `${order},${code},${name},${branch},${district},${cutoff}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'TNEA_Choice_Preference_List.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}Admissions Analytics — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ── Stats Card ── */
+  .an-stat-card {
+    background: #fff;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    height: 100%;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+  }
+  .an-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(212, 175, 55, 0.25);
+  }
+  .an-stat-card .an-lbl {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--c-muted);
+    margin-bottom: .35rem;
+    display: block;
+  }
+  .an-stat-card .an-val {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--c-primary);
+    line-height: 1.1;
+  }
+  .an-stat-card .an-icon {
+    font-size: 2rem;
+    margin-bottom: .5rem;
+    display: block;
+  }
+
+  /* ── Section Title ── */
+  .an-section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--c-primary);
+    padding-bottom: .6rem;
+    border-bottom: 2px solid var(--c-border);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ── Custom Progress Bar distribution rows ── */
+  .an-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+  }
+  .an-bar-row:last-child {
+    margin-bottom: 0;
+  }
+  .an-bar-label {
+    font-size: .84rem;
+    font-weight: 600;
+    color: var(--c-text);
+    min-width: 220px;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .an-bar-track {
+    flex: 1;
+    background: #F1F5F9;
+    border-radius: 6px;
+    height: 12px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .an-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .an-bar-count {
+    font-family: monospace;
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--c-muted);
+    min-width: 50px;
+    text-align: right;
+  }
+
+  /* ── Badges ── */
+  .an-badge-yes  { background: var(--c-success-bg); color: var(--c-success); border: 1px solid rgba(16, 185, 129, 0.15); }
+  .an-badge-no   { background: var(--c-danger-bg); color: var(--c-danger); border: 1px solid rgba(239, 68, 68, 0.15); }
+  .an-badge-base {
+    display: inline-block;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: .35em .8em;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 768px) {
+    .an-bar-label { min-width: 140px; max-width: 140px; font-size: .78rem; }
+    .an-stat-card .an-val { font-size: 1.75rem; }
+  }
+</style>
+
+<div class="container py-4 py-md-5">
+
+  {# ── Page Header ── #}
+  <div class="mb-5">
+    <h2 class="fw-bold text-primary mb-1" style="font-family:'Outfit', sans-serif;">Admissions Analytics Dashboard</h2>
+    <p class="text-muted mb-0" style="font-size:.9rem;">
+      Statistical distributions derived from official TNEA cutoff parameters (2023 – 2025).
+    </p>
+  </div>
+
+  {% if error %}
+  {# ── Error State ── #}
+  <div class="card border-0 shadow rounded-4 p-5 text-center bg-white">
+    <div class="fs-1 mb-2">⚠️</div>
+    <h5 class="fw-bold text-primary mb-1">Analytics Unavailable</h5>
+    <p class="mb-0 text-muted" style="font-size:0.9rem;">{{ error }}</p>
+  </div>
+
+  {% else %}
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SUMMARY CARDS GRID                                         #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="row g-4 mb-5">
+
+    <div class="col-6 col-md-3">
+      <div class="an-stat-card">
+        <span class="an-icon text-muted"><i class="bi bi-building"></i></span>
+        <span class="an-lbl">Total Institutions</span>
+        <div class="an-val text-primary">{{ total_colleges or '—' }}</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="an-stat-card">
+        <span class="an-icon text-muted"><i class="bi bi-journal-code"></i></span>
+        <span class="an-lbl">Unique Specializations</span>
+        <div class="an-val text-primary">{{ total_branches or '—' }}</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="an-stat-card">
+        <span class="an-icon text-muted"><i class="bi bi-database"></i></span>
+        <span class="an-lbl">Cutoff Database size</span>
+        <div class="an-val text-primary">{{ "{:,}".format(total_cutoffs) if total_cutoffs else '—' }}</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="an-stat-card">
+        <span class="an-icon text-muted"><i class="bi bi-calendar3"></i></span>
+        <span class="an-lbl">Active Years Mapping</span>
+        <div class="an-val text-primary">{{ cutoffs_by_year | length }} Years</div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION 2: Record distributions per Year                   #}
+  {# ══════════════════════════════════════════════════════════ #}
+  {% if cutoffs_by_year %}
+  <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="card-body p-4">
+      <div class="an-section-title"><i class="bi bi-calendar3 text-primary me-2"></i> Cutoff Record Counts by Counseling Year</div>
+      {% set max_year_count = cutoffs_by_year | map(attribute='count') | max %}
+      {% for row in cutoffs_by_year %}
+      <div class="an-bar-row">
+        <div class="an-bar-label fw-bold">{{ row.year }} Academic Year</div>
+        <div class="an-bar-track">
+          <div class="an-bar-fill" style="width:{{ (row.count / max_year_count * 100) | round(1) }}%; background: var(--c-primary-light);"></div>
+        </div>
+        <div class="an-bar-count">{{ "{:,}".format(row.count) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION 3: District distribution                           #}
+  {# ══════════════════════════════════════════════════════════ #}
+  {% if top_districts %}
+  <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="card-body p-4">
+      <div class="an-section-title"><i class="bi bi-geo-alt-fill text-danger me-2"></i> Top Districts by College Density</div>
+      {% set max_dist_count = top_districts | map(attribute='count') | max %}
+      {% for row in top_districts %}
+      <div class="an-bar-row">
+        <div class="an-bar-label">{{ row.district }}</div>
+        <div class="an-bar-track">
+          <div class="an-bar-fill" style="width:{{ (row.count / max_dist_count * 100) | round(1) }}%; background: #3B82F6;"></div>
+        </div>
+        <div class="an-bar-count">{{ row.count }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION 4: Facilities charts                               #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="row g-4 mb-4">
+
+    <!-- Autonomous -->
+    {% if autonomous_stats %}
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+        <div class="card-body p-4">
+          <div class="an-section-title"><i class="bi bi-award-fill text-warning me-2"></i> Autonomous Status Allocation</div>
+          {% set auto_total = autonomous_stats | sum(attribute='count') %}
+          {% for row in autonomous_stats %}
+          <div class="an-bar-row">
+            <div class="an-bar-label">
+              <span class="an-badge-base {% if row.autonomous == 'Yes' %}an-badge-yes{% else %}an-badge-no{% endif %}">
+                {{ row.autonomous or 'Unknown' }}
+              </span>
+            </div>
+            <div class="an-bar-track">
+              <div class="an-bar-fill"
+                   style="width:{{ (row.count / auto_total * 100) | round(1) }}%;
+                          background:{% if row.autonomous == 'Yes' %}var(--c-success){% else %}var(--c-muted){% endif %};">
+              </div>
+            </div>
+            <div class="an-bar-count">{{ row.count }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Transport -->
+    {% if transport_stats %}
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+        <div class="card-body p-4">
+          <div class="an-section-title"><i class="bi bi-bus-front-fill text-primary me-2"></i> Transport Availability</div>
+          {% set tr_total = transport_stats | sum(attribute='count') %}
+          {% for row in transport_stats %}
+          <div class="an-bar-row">
+            <div class="an-bar-label">
+              <span class="an-badge-base {% if row.transport == 'Yes' %}an-badge-yes{% else %}an-badge-no{% endif %}">
+                {{ row.transport or 'Unknown' }}
+              </span>
+            </div>
+            <div class="an-bar-track">
+              <div class="an-bar-fill"
+                   style="width:{{ (row.count / tr_total * 100) | round(1) }}%;
+                          background:{% if row.transport == 'Yes' %}#F59E0B{% else %}var(--c-muted){% endif %};">
+              </div>
+            </div>
+            <div class="an-bar-count">{{ row.count }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Boys Hostel -->
+    {% if hostel_boys_stats %}
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+        <div class="card-body p-4">
+          <div class="an-section-title"><i class="bi bi-house-fill text-info me-2"></i> Boys Hostel Status</div>
+          {% set bh_total = hostel_boys_stats | sum(attribute='count') %}
+          {% for row in hostel_boys_stats %}
+          <div class="an-bar-row">
+            <div class="an-bar-label">
+              <span class="an-badge-base {% if row.hostel_boys == 'Yes' %}an-badge-yes{% else %}an-badge-no{% endif %}">
+                {{ row.hostel_boys or 'Unknown' }}
+              </span>
+            </div>
+            <div class="an-bar-track">
+              <div class="an-bar-fill"
+                   style="width:{{ (row.count / bh_total * 100) | round(1) }}%;
+                          background:{% if row.hostel_boys == 'Yes' %}#3B82F6{% else %}var(--c-muted){% endif %};">
+              </div>
+            </div>
+            <div class="an-bar-count">{{ row.count }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Girls Hostel -->
+    {% if hostel_girls_stats %}
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+        <div class="card-body p-4">
+          <div class="an-section-title"><i class="bi bi-house-heart-fill text-danger me-2"></i> Girls Hostel Status</div>
+          {% set gh_total = hostel_girls_stats | sum(attribute='count') %}
+          {% for row in hostel_girls_stats %}
+          <div class="an-bar-row">
+            <div class="an-bar-label">
+              <span class="an-badge-base {% if row.hostel_girls == 'Yes' %}an-badge-yes{% else %}an-badge-no{% endif %}">
+                {{ row.hostel_girls or 'Unknown' }}
+              </span>
+            </div>
+            <div class="an-bar-track">
+              <div class="an-bar-fill"
+                   style="width:{{ (row.count / gh_total * 100) | round(1) }}%;
+                          background:{% if row.hostel_girls == 'Yes' %}#EC4899{% else %}var(--c-muted){% endif %};">
+              </div>
+            </div>
+            <div class="an-bar-count">{{ row.count }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION 5: Branch distributions                            #}
+  {# ══════════════════════════════════════════════════════════ #}
+  {% if top_branches %}
+  <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="card-body p-4">
+      <div class="an-section-title"><i class="bi bi-cpu-fill text-warning me-2"></i> Most Offered Specialization Branches</div>
+      {% set max_branch_count = top_branches | map(attribute='count') | max %}
+      {% for row in top_branches %}
+      <div class="an-bar-row">
+        <div class="an-bar-label">{{ row.branch_name }}</div>
+        <div class="an-bar-track">
+          <div class="an-bar-fill"
+               style="width:{{ (row.count / max_branch_count * 100) | round(1) }}%; background:#8B5CF6;">
+          </div>
+        </div>
+        <div class="an-bar-count">{{ row.count }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION 6: Average OC Cutoff                               #}
+  {# ══════════════════════════════════════════════════════════ #}
+  {% if avg_cutoff_by_year %}
+  <div class="card border-0 shadow-sm rounded-4 mb-5 bg-white">
+    <div class="card-body p-4">
+      <div class="an-section-title"><i class="bi bi-graph-up-arrow text-success me-2"></i> Average Open Competition (OC) Cutoff Trend</div>
+      {% set max_avg = avg_cutoff_by_year | map(attribute='avg_oc') | max %}
+      {% for row in avg_cutoff_by_year %}
+      <div class="an-bar-row">
+        <div class="an-bar-label fw-bold">{{ row.year }} Academic Year</div>
+        <div class="an-bar-track">
+          <div class="an-bar-fill"
+               style="width:{{ (row.avg_oc / max_avg * 100) | round(1) }}%; background:#10B981;">
+          </div>
+        </div>
+        <div class="an-bar-count">{{ row.avg_oc }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}{# /error #}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-sm-11">
+
+            <div class="p-card p-4 p-md-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <div class="feature-icon mx-auto mb-3" style="width:48px; height:48px; background:#F1F5F9; border-radius:6px;">
+                        <i class="bi bi-person-plus text-primary" style="font-size:1.35rem;"></i>
+                    </div>
+                    <h3 style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--c-primary); margin-bottom:0.35rem;">
+                        Create Student Account
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Join TNEA Career Navigator for personalized career guidance and admission insights.
+                    </p>
+                </div>
+
+                <!-- Alert Messages -->
+                {% if error %}
+                <div class="alert alert-danger py-2 px-3 mb-4 small d-flex align-items-center gap-2" role="alert" style="border-radius:var(--radius-sm); border:1px solid #FECACA; background:#FEF2F2; color:#991B1B;">
+                    <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                    <div>{{ error }}</div>
+                </div>
+                {% endif %}
+
+                <!-- Form -->
+                <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+                    {% if next_url %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="name" class="form-section-label">Full Name</label>
+                        <input type="text" class="portal-input" id="name" name="name" value="{{ name or '' }}" placeholder="Enter your full name" required autofocus autocomplete="name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-section-label">Email Address</label>
+                        <input type="email" class="portal-input" id="email" name="email" value="{{ email or '' }}" placeholder="student@example.com" required autocomplete="email">
+                        <div class="form-text text-muted" style="font-size:0.75rem;">We will use this email for your login and guidance reports.</div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="password" class="form-section-label">Password</label>
+                            <input type="password" class="portal-input" id="password" name="password" placeholder="At least 6 characters" required autocomplete="new-password" minlength="6">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="confirm_password" class="form-section-label">Confirm Password</label>
+                            <input type="password" class="portal-input" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required autocomplete="new-password" minlength="6">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit-full mb-3">
+                        Create Account <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </form>
+
+                <div class="text-center pt-3 border-top mt-4">
+                    <p class="small text-muted mb-0">
+                        Already have an account? 
+                        <a href="{{ url_for('login', next=next_url) if next_url else url_for('login') }}" style="color:var(--c-primary); font-weight:700; text-decoration:underline;">
+                            Sign in here
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Trust / Privacy note -->
+            <div class="text-center mt-3">
+                <span class="small text-muted" style="font-size:0.78rem;">
+                    <i class="bi bi-shield-check text-muted me-1"></i> Your password is securely encrypted. We never share student details.
+                </span>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

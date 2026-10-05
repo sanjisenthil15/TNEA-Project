@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7 col-sm-10">
+
+            <div class="p-card p-4 p-md-5">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <div class="feature-icon mx-auto mb-3" style="width:48px; height:48px; background:#F1F5F9; border-radius:6px;">
+                        <i class="bi bi-shield-lock text-primary" style="font-size:1.35rem;"></i>
+                    </div>
+                    <h3 style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--c-primary); margin-bottom:0.35rem;">
+                        Student Sign In
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Access your Career Guidance and personalized counselling tools.
+                    </p>
+                </div>
+
+                <!-- Alert Messages -->
+                {% if error %}
+                <div class="alert alert-danger py-2 px-3 mb-4 small d-flex align-items-center gap-2" role="alert" style="border-radius:var(--radius-sm); border:1px solid #FECACA; background:#FEF2F2; color:#991B1B;">
+                    <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                    <div>{{ error }}</div>
+                </div>
+                {% endif %}
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} py-2 px-3 mb-4 small d-flex align-items-center gap-2" role="alert" style="border-radius:var(--radius-sm);">
+                            <i class="bi bi-{{ 'check-circle-fill' if category == 'success' else 'info-circle-fill' }} flex-shrink-0"></i>
+                            <div>{{ message }}</div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Form -->
+                <form method="POST" action="{{ url_for('login') }}">
+                    {% if next_url %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="email" class="form-section-label">Email Address</label>
+                        <input type="email" class="portal-input" id="email" name="email" value="{{ email or '' }}" placeholder="student@example.com" required autofocus autocomplete="email">
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="password" class="form-section-label mb-0">Password</label>
+                        </div>
+                        <input type="password" class="portal-input" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+
+                    <button type="submit" class="btn-submit-full mb-3">
+                        Sign In <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </form>
+
+                <div class="text-center pt-3 border-top mt-4">
+                    <p class="small text-muted mb-0">
+                        Don't have an account? 
+                        <a href="{{ url_for('register', next=next_url) if next_url else url_for('register') }}" style="color:var(--c-primary); font-weight:700; text-decoration:underline;">
+                            Create an account
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Trust / Privacy note -->
+            <div class="text-center mt-3">
+                <span class="small text-muted" style="font-size:0.78rem;">
+                    <i class="bi bi-shield-check text-muted me-1"></i> Verified admissions platform. Your data remains private and secure.
+                </span>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

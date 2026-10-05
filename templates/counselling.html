@@ -1,0 +1,707 @@
+{% extends "base.html" %}
+
+{% block title %}TNEA Counselling Assistant & Strategy Guide — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- ── Hero Banner ── -->
+    <div class="card shadow-sm border-0 mb-4" style="background: linear-gradient(135deg, #0f1e36 0%, #1e3a63 100%); color: #ffffff; border-radius: 12px;">
+        <div class="card-body p-4 p-md-5">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <span class="badge bg-warning text-dark px-3 py-1 mb-2 fw-semibold" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                        <i class="bi bi-compass-fill me-1"></i> PHASE 5 — TNEA COUNSELLING ASSISTANT
+                    </span>
+                    <h1 class="h2 fw-bold text-white mb-2">TNEA Choice-Filling Guidance & Strategy</h1>
+                    <p class="text-white-50 mb-3" style="font-size: 0.95rem; line-height: 1.6;">
+                        Understand how the TNEA single-window counseling system works, balance your career fit with real historical cutoffs, and organize your preference list without common pitfalls.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="#vault-section" class="btn btn-warning btn-sm fw-semibold px-3 py-2">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Document Vault ({{ vault_uploaded_count }}/{{ vault_total_categories }})
+                        </a>
+                        <a href="#checklist-section" class="btn btn-outline-light btn-sm fw-semibold px-3 py-2">
+                            <i class="bi bi-check2-square me-1"></i> Interactive Checklist
+                        </a>
+                        <a href="/choice-list" class="btn btn-outline-light btn-sm px-3 py-2">
+                            <i class="bi bi-bookmark-star-fill text-warning me-1"></i> My Choice List ({{ choice_count }})
+                        </a>
+                        <a href="/resources" class="btn btn-outline-light btn-sm px-3 py-2">
+                            <i class="bi bi-book-half text-success me-1"></i> Verified Resources
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-white-50 small fw-semibold">Checklist Readiness</span>
+                            <span class="badge bg-success" id="progressBadge">{{ completed_count }}/{{ total_items }} Steps</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px; background: rgba(255, 255, 255, 0.2);">
+                            <div class="progress-bar bg-warning" id="checklistProgressBar" role="progressbar" style="width: {{ progress_pct }}%;" aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
+                            <span class="text-white-50 small fw-semibold">Document Vault</span>
+                            <span class="badge bg-warning text-dark">{{ vault_uploaded_count }}/{{ vault_total_categories }} Stored</span>
+                        </div>
+                        <p class="small text-white-50 mb-0" style="font-size: 0.78rem;">
+                            {% if profile %}
+                            Personalized for: <strong class="text-white">{{ profile.name }}</strong> (Cutoff: <strong class="text-warning">{{ "%.2f"|format(profile.cutoff) }}</strong> | {{ profile.community }})
+                            {% else %}
+                            <a href="/career-guidance" class="text-warning text-decoration-none fw-semibold">Complete Career Assessment</a> to unlock profile-tailored guidance.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Essential Rules Grid ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded-circle bg-primary-subtle text-primary p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-diagram-3-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0 text-dark">Single Window Evaluation</h6>
+                    </div>
+                    <p class="text-muted small mb-0" style="line-height: 1.5;">
+                        TNEA evaluates your choices in strict descending order (1 to N). The algorithm allocates the first choice where seats are vacant for your rank and quota. Higher choices carry zero risk to lower choices.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded-circle bg-warning-subtle text-warning p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-pie-chart-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0 text-dark">3-Tier Preference Strategy</h6>
+                    </div>
+                    <p class="text-muted small mb-0" style="line-height: 1.5;">
+                        Distribute your choices into <strong>Dream</strong> (1–10 aspirational), <strong>Realistic</strong> (11–25 target cutoff matches), and <strong>Safer</strong> (26–40 solid backups) options.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded-circle bg-danger-subtle text-danger p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-shield-exclamation"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0 text-dark">Career Fit vs. Cutoff</h6>
+                    </div>
+                    <p class="text-muted small mb-0" style="line-height: 1.5;">
+                        <strong>Career Fit</strong> is your interest match. <strong>Admission</strong> is cutoff competition. Never pick an unwanted branch merely because a college has a famous brand name.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section: Career Fit vs. Admission Opportunity Distinction ── -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-sliders text-primary me-2 fs-5"></i>
+                <div>
+                    <h5 class="fw-bold mb-0">Crucial Decision Concept: Career Fit vs. Admission Opportunity</h5>
+                    <small class="text-muted">Avoid confusing your branch passion score with college allotment probability.</small>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4">
+                <div class="col-md-6 border-end-md">
+                    <div class="p-3 bg-light rounded border h-100">
+                        <div class="d-flex align-items-center text-primary mb-2">
+                            <i class="bi bi-person-check-fill fs-4 me-2"></i>
+                            <h6 class="fw-bold mb-0">1. Career Fit (Assessment Match)</h6>
+                        </div>
+                        <ul class="text-muted small mb-0 ps-3" style="line-height: 1.6;">
+                            <li>Measures your natural thinking style, quantitative reasoning, and subject aptitude.</li>
+                            <li><strong>Example:</strong> An 88% Career Fit for Computer Science means your logical reasoning and problem-solving align strongly with software disciplines.</li>
+                            <li>Does <em>not</em> indicate seat availability or cutoff certainty.</li>
+                            <li>A high career fit is your compass for selecting <strong>which branch</strong> to pursue.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded border h-100">
+                        <div class="d-flex align-items-center text-success mb-2">
+                            <i class="bi bi-building-check fs-4 me-2"></i>
+                            <h6 class="fw-bold mb-0">2. Admission Opportunity (Cutoff Reality)</h6>
+                        </div>
+                        <ul class="text-muted small mb-0 ps-3" style="line-height: 1.6;">
+                            <li>Measures your 12th normalized cutoff (e.g. 178.50) against historical closing cutoffs (2023–2025).</li>
+                            <li><strong>Example:</strong> College A CSE closed at 192.00 (Competitive / Dream), while College B CSE closed at 177.00 (Realistic).</li>
+                            <li>Helps you decide <strong>where</strong> in your preference order each college should be placed.</li>
+                            <li>Both College A and College B have equal 88% Career Fit, but differing admission competition.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section: Strategy Framework ── -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-layers-fill text-warning me-2"></i>How to Structure Your TNEA Preference Order
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="timeline-step mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-start">
+                            <span class="badge bg-danger text-white me-3 px-2 py-1">Tier 1</span>
+                            <div>
+                                <h6 class="fw-bold mb-1 text-dark">Dream / Ambitious Choices (Top 1–10)</h6>
+                                <p class="text-muted small mb-1">
+                                    Colleges and branches where historical cutoffs are <strong>1.0 to 3.5 marks above</strong> your current score.
+                                </p>
+                                <span class="badge bg-danger-subtle text-danger small">Why:</span>
+                                <span class="small text-muted">If student preferences slide or seat matrix expands in your round, you might secure a dream seat. You lose nothing by putting them first.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-step mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-start">
+                            <span class="badge bg-primary text-white me-3 px-2 py-1">Tier 2</span>
+                            <div>
+                                <h6 class="fw-bold mb-1 text-dark">Realistic / Target Matches (Choices 11–25)</h6>
+                                <p class="text-muted small mb-1">
+                                    Colleges where historical cutoffs fall <strong>within ±1.5 marks</strong> of your calculated score.
+                                </p>
+                                <span class="badge bg-primary-subtle text-primary small">Why:</span>
+                                <span class="small text-muted">This is your core allocation zone where statistical probability of allotment is strongest based on 2023–2025 verified data.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-step">
+                        <div class="d-flex align-items-start">
+                            <span class="badge bg-success text-white me-3 px-2 py-1">Tier 3</span>
+                            <div>
+                                <h6 class="fw-bold mb-1 text-dark">Safe / Backup Choices (Choices 26–40+)</h6>
+                                <p class="text-muted small mb-1">
+                                    Reputed accredited institutions where historical cutoffs are <strong>3.0 to 6.0+ marks below</strong> your score.
+                                </p>
+                                <span class="badge bg-success-subtle text-success small">Why:</span>
+                                <span class="small text-muted">Protects you from ending up without an allotment in round 1 or round 2 due to unexpected upward cutoff spikes.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-question-circle-fill text-info me-2"></i>Branch vs. College: Decision Guide
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-primary mb-1" style="font-size: 0.9rem;">Scenario A: Core Engineering vs. Brand Name</h6>
+                        <p class="text-muted small mb-2">
+                            If you are passionate about <strong>Computer Science / AI</strong>, should you take Mechanical at a Tier-1 college or CSE at a Tier-2 autonomous institution?
+                        </p>
+                        <div class="p-2 bg-light rounded small border">
+                            <strong>Counselor Insight:</strong> If your assessment shows strong computing aptitude, taking an unrelated branch just for college prestige often leads to academic stress. Modern software recruiters evaluate practical skills, GitHub projects, and problem-solving regardless of college tier.
+                        </div>
+                    </div>
+
+                    <div>
+                        <h6 class="fw-bold text-primary mb-1" style="font-size: 0.9rem;">Scenario B: Related Specialized Branches</h6>
+                        <p class="text-muted small mb-2">
+                            Can you place <strong>CSE, IT, and AI&DS</strong> at the same college as consecutive preferences?
+                        </p>
+                        <div class="p-2 bg-light rounded small border">
+                            <strong>Counselor Insight:</strong> Yes! For example: Choice 1: College X (CSE), Choice 2: College X (IT), Choice 3: College X (AI&DS). These count as three unique official choices.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section: Secure Student Document Vault (Premium Feature) ── -->
+    <div class="card shadow-sm border-0 mb-4" id="vault-section">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-success-subtle text-success p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-shield-lock-fill fs-5"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h5 class="fw-bold mb-0 text-dark">My Documents &amp; Certificate Vault</h5>
+                        <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.7rem;"><i class="bi bi-stars"></i> PREMIUM VAULT</span>
+                    </div>
+                    <small class="text-muted">Securely store, organize, and manage your certificates and marksheets required for TNEA verification and college admission.</small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border px-3 py-2" id="vaultCounterBadge">
+                    Stored: <strong class="text-success" id="vaultUploadedSpan">{{ vault_uploaded_count }}</strong> of {{ vault_total_categories }} Documents
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-4">
+
+            <!-- Security & Notice Bar -->
+            <div class="alert alert-secondary bg-light border-0 small mb-4 py-2 px-3 text-muted d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <i class="bi bi-shield-check text-success me-1"></i>
+                    <strong>Private &amp; Secure Storage:</strong> Files are stored in an isolated private vault. Direct public access is strictly forbidden. Supported: <strong>PDF, JPG, PNG, WEBP (Max 10MB)</strong>.
+                </div>
+                <span class="text-muted" style="font-size: 0.78rem;"><i class="bi bi-info-circle me-1"></i>Some certificates apply only to specific quota/fee categories.</span>
+            </div>
+
+            <!-- Categories Accordion / Groups -->
+            {% for group_id, group_title, group_badge_cls in [
+                ('academic', 'Academic Documents', 'bg-primary'),
+                ('counselling', 'Counselling Documents', 'bg-success'),
+                ('special', 'Certificates & Special Claims', 'bg-warning text-dark'),
+                ('other', 'Other Documents', 'bg-secondary')
+            ] %}
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge {{ group_badge_cls }} px-2 py-1 me-2" style="font-size: 0.75rem;">{{ group_title }}</span>
+                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.95rem;">{{ group_title }}</h6>
+                </div>
+
+                <div class="row g-3">
+                    {% for cat in vault_categories if cat.group == group_id %}
+                    {% set doc = doc_map.get(cat.key) %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border {% if doc %}border-success-subtle bg-white{% else %}border-light-subtle bg-light{% endif %} shadow-sm">
+                            <div class="card-body p-3 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded p-1 bg-light border d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="bi {{ cat.icon }} text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.88rem;">{{ cat.name }}</h6>
+                                            {% if cat.is_mandatory %}
+                                            <span class="badge bg-danger-subtle text-danger" style="font-size: 0.65rem;">Standard</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">If Applicable</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if doc %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-semibold" style="font-size: 0.72rem;">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Uploaded
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-white text-muted border px-2 py-1 fw-normal" style="font-size: 0.72rem;">
+                                        <i class="bi bi-circle me-1"></i> Not Uploaded
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <p class="text-muted small mb-2 flex-grow-1" style="font-size: 0.78rem; line-height: 1.45;">
+                                    {{ cat.description }}
+                                </p>
+
+                                {% if doc %}
+                                <div class="p-2 mb-3 rounded bg-light border small" style="font-size: 0.75rem;">
+                                    <div class="text-truncate fw-semibold text-dark mb-1" title="{{ doc.original_filename }}">
+                                        <i class="bi bi-paperclip me-1 text-primary"></i>{{ doc.original_filename }}
+                                    </div>
+                                    <div class="d-flex justify-content-between text-muted" style="font-size: 0.71rem;">
+                                        <span>{{ "%.1f"|format(doc.file_size / 1024) }} KB</span>
+                                        <span>{{ doc.uploaded_at[:10] if doc.uploaded_at else '' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-1 mt-auto align-items-center">
+                                    <a href="/api/vault/document/{{ doc.id }}/view" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm px-2 py-1" style="font-size: 0.75rem;" title="View document inline in browser">
+                                        <i class="bi bi-eye me-1"></i> View
+                                    </a>
+                                    <a href="/api/vault/document/{{ doc.id }}/download" class="btn btn-outline-success btn-sm px-2 py-1" style="font-size: 0.75rem;" title="Download document to device">
+                                        <i class="bi bi-download me-1"></i> Download
+                                    </a>
+                                    <button type="button" class="btn btn-outline-warning text-dark btn-sm px-2 py-1" style="font-size: 0.75rem;" onclick="openVaultUploadModal('{{ cat.key }}', '{{ cat.name }}', true)" title="Upload a replacement file">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Replace
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1 ms-auto" style="font-size: 0.75rem;" onclick="confirmDeleteVaultDoc({{ doc.id }}, '{{ cat.name }}')" title="Delete this document">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                {% else %}
+                                <div class="mt-auto pt-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 py-1" style="font-size: 0.8rem;" onclick="openVaultUploadModal('{{ cat.key }}', '{{ cat.name }}', false)">
+                                        <i class="bi bi-upload me-1"></i> Upload Document
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+
+    <!-- ── Section: Interactive Actionable Counselling Checklist ── -->
+    <div class="card shadow-sm border-0 mb-4" id="checklist-section">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check2-circle text-success me-2 fs-5"></i>
+                <div>
+                    <h5 class="fw-bold mb-0">Actionable TNEA Counselling Checklist</h5>
+                    <small class="text-muted">Track your preparation before choice filling opens and before final locking.</small>
+                </div>
+            </div>
+            <span class="badge bg-light text-dark border px-3 py-2" id="checklistCounter">
+                Completed: <strong class="text-success" id="completedCountSpan">{{ completed_count }}</strong> of {{ total_items }}
+            </span>
+        </div>
+        <div class="card-body p-4">
+
+            <!-- Stage 1: Before Choice Filling -->
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-primary px-2 py-1 me-2">Stage 1</span>
+                    <h6 class="fw-bold mb-0 text-dark">Before Choice-Filling Starts</h6>
+                </div>
+                <div class="list-group list-group-flush border rounded">
+                    {% for item in checklist_items if item.stage == 'before_filling' %}
+                    {% set is_checked = checklist_status.get(item.key, False) %}
+                    <label class="list-group-item d-flex gap-3 align-items-start p-3 checklist-label {% if is_checked %}bg-light text-muted{% endif %}">
+                        <input class="form-check-input flex-shrink-0 checklist-checkbox mt-1" type="checkbox" data-key="{{ item.key }}" {% if is_checked %}checked{% endif %} {% if not session.get('user_id') %}disabled{% endif %}>
+                        <div class="flex-grow-1">
+                            <span class="fw-semibold d-block item-title {% if is_checked %}text-decoration-line-through{% else %}text-dark{% endif %}" style="font-size: 0.92rem;">
+                                {{ item.title }}
+                            </span>
+                            <small class="text-muted">{{ item.desc }}</small>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Stage 2: Before Final Submission -->
+            <div>
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-warning text-dark px-2 py-1 me-2">Stage 2</span>
+                    <h6 class="fw-bold mb-0 text-dark">Before Locking & Final Submission</h6>
+                </div>
+                <div class="list-group list-group-flush border rounded">
+                    {% for item in checklist_items if item.stage == 'before_submission' %}
+                    {% set is_checked = checklist_status.get(item.key, False) %}
+                    <label class="list-group-item d-flex gap-3 align-items-start p-3 checklist-label {% if is_checked %}bg-light text-muted{% endif %}">
+                        <input class="form-check-input flex-shrink-0 checklist-checkbox mt-1" type="checkbox" data-key="{{ item.key }}" {% if is_checked %}checked{% endif %} {% if not session.get('user_id') %}disabled{% endif %}>
+                        <div class="flex-grow-1">
+                            <span class="fw-semibold d-block item-title {% if is_checked %}text-decoration-line-through{% else %}text-dark{% endif %}" style="font-size: 0.92rem;">
+                                {{ item.title }}
+                            </span>
+                            <small class="text-muted">{{ item.desc }}</small>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if not session.get('user_id') %}
+            <div class="alert alert-info mt-3 mb-0 d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                <div>
+                    <strong>Sign In to Save Your Progress:</strong> Create an account or sign in to save your checklist marks and keep your personalized choice list across sessions.
+                    <a href="/login" class="fw-bold text-decoration-none ms-2">Sign In Now &rarr;</a>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ── Call to Action / Navigation Footer ── -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body p-4 text-center">
+            <h5 class="fw-bold text-dark mb-2">Ready to Build Your Structured Choice List?</h5>
+            <p class="text-muted small mb-3 mx-auto" style="max-width: 600px;">
+                Use our Admission Planner to evaluate historical cutoffs, add target college & branch choices, and organize them into your personal preference order.
+            </p>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a href="/planner" class="btn btn-primary btn-sm px-4 py-2">
+                    <i class="bi bi-calculator me-1"></i> Open Admission Planner
+                </a>
+                <a href="/choice-list" class="btn btn-warning btn-sm px-4 py-2 fw-semibold">
+                    <i class="bi bi-list-ol me-1"></i> Organize Choice List
+                </a>
+                <a href="/career-assistant" class="btn btn-outline-dark btn-sm px-4 py-2">
+                    <i class="bi bi-robot text-warning me-1"></i> Ask AI Counselor
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Verified TNEA Source Disclaimer ── -->
+    <div class="text-center text-muted small py-2">
+        <i class="bi bi-shield-check text-success me-1"></i>
+        <strong>Official Data Grounding:</strong> Cutoff figures and college details are retrieved directly from verified TNEA historical records (2023–2025). This portal provides decision support and does not guarantee admission or official seat allotment. Official counselling is conducted exclusively via <a href="https://www.tneaonline.org" target="_blank" rel="noopener noreferrer" class="text-decoration-none">tneaonline.org</a>.
+    </div>
+
+</div>
+
+<!-- ── Vault Upload / Replace Modal ── -->
+<div class="modal fade" id="vaultUploadModal" tabindex="-1" aria-labelledby="vaultUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title fw-bold" id="vaultUploadModalLabel">
+                    <i class="bi bi-cloud-arrow-up-fill me-2"></i>Upload Document
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="vaultUploadForm" onsubmit="handleVaultUploadSubmit(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="vaultModalDocType" name="document_type" value="">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Document Category</label>
+                        <div class="p-2 bg-light rounded border fw-semibold text-dark" id="vaultModalDocTypeDisplay">
+                            --
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="vaultFileInput" class="form-label small fw-bold text-muted text-uppercase mb-1">Select File</label>
+                        <input class="form-control" type="file" id="vaultFileInput" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required onchange="handleVaultFileSelection(this)">
+                        <div class="form-text small mt-1">
+                            Allowed formats: <strong>PDF, JPG, JPEG, PNG, WEBP</strong> (Max size: <strong>10MB</strong>).
+                        </div>
+                    </div>
+
+                    <!-- Client-side error alert -->
+                    <div class="alert alert-danger py-2 small d-none" id="vaultModalAlert" role="alert"></div>
+
+                    <!-- Progress bar -->
+                    <div class="progress d-none mb-2" id="vaultUploadProgress" style="height: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold" id="vaultModalSubmitBtn">
+                        <i class="bi bi-upload me-1"></i> Upload File
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Vault Delete Confirmation Modal ── -->
+<div class="modal fade" id="vaultDeleteModal" tabindex="-1" aria-labelledby="vaultDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white py-2">
+                <h6 class="modal-title fw-bold" id="vaultDeleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Confirm Delete
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3 text-center">
+                <p class="small text-muted mb-2">Are you sure you want to remove this document from your vault?</p>
+                <div class="fw-bold text-dark mb-2" id="vaultDeleteDocName">--</div>
+                <small class="text-danger" style="font-size: 0.72rem;">This action permanently deletes the stored file.</small>
+            </div>
+            <div class="modal-footer bg-light p-2 justify-content-center">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm px-3" id="vaultConfirmDeleteBtn" onclick="executeDeleteVaultDoc()">
+                    <i class="bi bi-trash me-1"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Checklist & Document Vault Interactive Script ── -->
+<script>
+let activeDeleteDocId = null;
+
+function openVaultUploadModal(categoryKey, categoryName, isReplace) {
+    document.getElementById('vaultModalDocType').value = categoryKey;
+    document.getElementById('vaultModalDocTypeDisplay').innerText = categoryName;
+    document.getElementById('vaultUploadModalLabel').innerHTML = isReplace ? 
+        '<i class="bi bi-arrow-repeat me-2"></i>Replace Document' : 
+        '<i class="bi bi-cloud-arrow-up-fill me-2"></i>Upload Document';
+    document.getElementById('vaultModalSubmitBtn').innerHTML = isReplace ? 
+        '<i class="bi bi-arrow-repeat me-1"></i> Replace File' : 
+        '<i class="bi bi-upload me-1"></i> Upload File';
+    
+    // Clear inputs & alerts
+    const fileInput = document.getElementById('vaultFileInput');
+    fileInput.value = '';
+    const alertBox = document.getElementById('vaultModalAlert');
+    alertBox.classList.add('d-none');
+    alertBox.innerText = '';
+    document.getElementById('vaultUploadProgress').classList.add('d-none');
+    document.getElementById('vaultModalSubmitBtn').disabled = false;
+
+    const modal = new bootstrap.Modal(document.getElementById('vaultUploadModal'));
+    modal.show();
+}
+
+function handleVaultFileSelection(input) {
+    const alertBox = document.getElementById('vaultModalAlert');
+    alertBox.classList.add('d-none');
+    alertBox.innerText = '';
+
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (!allowedExts.includes(ext)) {
+        alertBox.innerText = `Invalid file format (.${ext}). Only PDF, JPG, JPEG, PNG, and WEBP files are allowed.`;
+        alertBox.classList.remove('d-none');
+        input.value = '';
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        alertBox.innerText = `File is too large (${(file.size / (1024*1024)).toFixed(2)}MB). Maximum allowed size is 10MB.`;
+        alertBox.classList.remove('d-none');
+        input.value = '';
+        return;
+    }
+}
+
+function handleVaultUploadSubmit(event) {
+    event.preventDefault();
+    const form = document.getElementById('vaultUploadForm');
+    const alertBox = document.getElementById('vaultModalAlert');
+    const submitBtn = document.getElementById('vaultModalSubmitBtn');
+    const progressBar = document.getElementById('vaultUploadProgress');
+
+    const fileInput = document.getElementById('vaultFileInput');
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alertBox.innerText = 'Please select a file to upload.';
+        alertBox.classList.remove('d-none');
+        return;
+    }
+
+    const formData = new FormData(form);
+    submitBtn.disabled = true;
+    progressBar.classList.remove('d-none');
+    alertBox.classList.add('d-none');
+
+    fetch('/api/vault/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json().then(data => ({ status: res.status, body: data })))
+    .then(({ status, body }) => {
+        if (status === 200 && body.status === 'success') {
+            window.location.reload();
+        } else {
+            submitBtn.disabled = false;
+            progressBar.classList.add('d-none');
+            alertBox.innerText = body.message || 'Upload failed. Please try again.';
+            alertBox.classList.remove('d-none');
+        }
+    })
+    .catch(err => {
+        submitBtn.disabled = false;
+        progressBar.classList.add('d-none');
+        alertBox.innerText = 'Network error while uploading. Please check connection.';
+        alertBox.classList.remove('d-none');
+    });
+}
+
+function confirmDeleteVaultDoc(docId, docName) {
+    activeDeleteDocId = docId;
+    document.getElementById('vaultDeleteDocName').innerText = docName;
+    const modal = new bootstrap.Modal(document.getElementById('vaultDeleteModal'));
+    modal.show();
+}
+
+function executeDeleteVaultDoc() {
+    if (!activeDeleteDocId) return;
+    const deleteBtn = document.getElementById('vaultConfirmDeleteBtn');
+    deleteBtn.disabled = true;
+
+    fetch(`/api/vault/document/${activeDeleteDocId}`, {
+        method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Failed to delete document.');
+            deleteBtn.disabled = false;
+        }
+    })
+    .catch(err => {
+        alert('Error deleting document.');
+        deleteBtn.disabled = false;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.checklist-checkbox');
+    const progressBar = document.getElementById('checklistProgressBar');
+    const progressBadge = document.getElementById('progressBadge');
+    const completedSpan = document.getElementById('completedCountSpan');
+    const totalItems = {{ total_items }};
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            const key = this.getAttribute('data-key');
+            const isCompleted = this.checked;
+            const label = this.closest('.checklist-label');
+            const titleSpan = label.querySelector('.item-title');
+
+            if (isCompleted) {
+                label.classList.add('bg-light', 'text-muted');
+                titleSpan.classList.add('text-decoration-line-through');
+                titleSpan.classList.remove('text-dark');
+            } else {
+                label.classList.remove('bg-light', 'text-muted');
+                titleSpan.classList.remove('text-decoration-line-through');
+                titleSpan.classList.add('text-dark');
+            }
+
+            // Sync with backend API
+            fetch('/api/checklist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_key: key, is_completed: isCompleted })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (progressBar) progressBar.style.width = data.progress_pct + '%';
+                    if (progressBadge) progressBadge.innerText = `${data.completed_count}/${data.total_items} Steps`;
+                    if (completedSpan) completedSpan.innerText = data.completed_count;
+                }
+            })
+            .catch(err => console.error('Checklist sync error:', err));
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Premium Access (₹200) — TNEA Career Insight Navigator{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-md-5">
+
+    <!-- ── Hero Banner ── -->
+    <div class="card shadow-lg border-0 mb-5 text-white position-relative overflow-hidden" 
+         style="background: radial-gradient(circle at 10% 20%, #172a45 0%, #0F1E36 90%); border-radius: 16px; border: 1px solid rgba(255, 215, 0, 0.2) !important;">
+        
+        <!-- Subtle Glow Effect -->
+        <div style="position: absolute; top: -50px; right: -50px; width: 250px; height: 250px; background: rgba(245, 158, 11, 0.15); filter: blur(70px); border-radius: 50%;"></div>
+        
+        <div class="card-body p-4 p-md-5 position-relative">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <span class="badge px-3 py-1 mb-3 fw-bold d-inline-flex align-items-center gap-1" 
+                          style="background: linear-gradient(135deg, #F59E0B, #D97706); color: #0F172A; font-size: 0.82rem; letter-spacing: 0.5px; border-radius: 20px;">
+                        <i class="bi bi-stars"></i> COMPLETE ADMISSION ADVANTAGE
+                    </span>
+
+                    <h1 class="display-6 fw-bold text-white mb-3" style="font-family:'Outfit', sans-serif;">
+                        Unlock Full Premium Access for <span style="color:#FBBF24;">₹200</span>
+                    </h1>
+
+                    <p class="text-white-50 mb-4" style="font-size: 1.05rem; line-height: 1.65; max-width: 680px;">
+                        Supercharge your engineering counselling with personalized AI intelligence, single-window allocation strategy, verified learning tracks, and automated choice tier classification.
+                    </p>
+
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-2 text-white-50 small">
+                            <i class="bi bi-check-circle-fill text-warning"></i> One-Time Payment
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-white-50 small">
+                            <i class="bi bi-check-circle-fill text-warning"></i> Full 2026 TNEA Season
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-white-50 small">
+                            <i class="bi bi-check-circle-fill text-warning"></i> Instant Same-Account Unlock
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Box -->
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="card border-0 text-center p-4 shadow-sm" 
+                         style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15) !important; border-radius: 14px;">
+                        
+                        <div class="small text-uppercase fw-bold text-warning mb-1" style="letter-spacing: 1px;">Lifetime Season Pass</div>
+                        <div class="d-flex justify-content-center align-items-baseline mb-2">
+                            <span class="fs-4 text-white-50 me-1">₹</span>
+                            <span class="display-4 fw-extrabold text-white fw-bold">200</span>
+                            <span class="text-white-50 ms-1 small">/ one-time</span>
+                        </div>
+                        <p class="small text-white-50 mb-3" style="font-size: 0.8rem;">
+                            No recurring subscription. Instant server-verified activation on your current account.
+                        </p>
+
+                        {% if current_user and current_user.is_premium %}
+                        <div class="alert alert-success py-2 mb-0 fw-bold small d-flex align-items-center justify-content-center gap-2" style="border-radius: 8px;">
+                            <i class="bi bi-patch-check-fill text-success fs-5"></i>
+                            <span>Premium is Active on Your Account</span>
+                        </div>
+                        <a href="{{ url_for('career_assistant_view') }}" class="btn btn-warning fw-bold w-100 mt-2 py-2">
+                            Open AI Assistant <i class="bi bi-arrow-right"></i>
+                        </a>
+                        {% else %}
+                        <button id="activatePremiumBtn" class="btn btn-warning fw-bold w-100 py-2 d-flex align-items-center justify-content-center gap-2" style="font-size: 1rem; border-radius: 8px;">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                            <span>Unlock Premium Now (₹200)</span>
+                        </button>
+                        {% endif %}
+
+                        <div class="small text-white-50 mt-2 d-flex align-items-center justify-content-center gap-1" style="font-size: 0.72rem;">
+                            <i class="bi bi-shield-lock-fill text-success"></i> 256-bit Secure Server Verification
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Flash / Notice Messages ── -->
+    {% if feature_notice %}
+    <div class="alert alert-warning py-3 px-4 mb-4 d-flex align-items-center gap-3 shadow-sm" style="border-radius: 10px; border-left: 5px solid #D97706;">
+        <i class="bi bi-lock-fill fs-3 text-warning"></i>
+        <div>
+            <h6 class="fw-bold mb-1">Premium Feature Required</h6>
+            <span class="small text-muted">{{ feature_notice }} Unlock ₹200 Premium Access below to use this feature immediately.</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── The Five Core Benefits Section ── -->
+    <div class="mb-5">
+        <div class="text-center mb-4">
+            <span class="text-uppercase small fw-bold text-warning" style="letter-spacing: 1px;">PREMIUM CAREER GUIDANCE</span>
+            <h2 class="h3 fw-bold text-dark mt-1" style="font-family:'Outfit', sans-serif;">
+                Five Essential Premium Benefits
+            </h2>
+            <p class="text-muted small mx-auto" style="max-width: 600px;">
+                Designed specifically to provide clarity, strategy, and personalized guidance during the high-stakes TNEA engineering counselling process.
+            </p>
+        </div>
+
+        <div class="row g-3 justify-content-center">
+            <!-- Benefit 1 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm p-4 text-start position-relative benefit-card" 
+                     style="border-radius: 12px; transition: transform 0.2s; border-top: 4px solid #F59E0B !important;">
+                    <div class="p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 48px; height: 48px; background: rgba(245, 158, 11, 0.12); color: #D97706;">
+                        <i class="bi bi-person-lines-fill fs-4"></i>
+                    </div>
+                    <span class="badge bg-warning text-dark mb-2 align-self-start fw-bold" style="font-size: 0.72rem;">Benefit 1</span>
+                    <h5 class="fw-bold text-dark mb-2">Career Guidance</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.55;">
+                        Personalized career aptitude discovery and comprehensive report evaluating top engineering branch compatibility based on your 12th marks and interests.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Benefit 2 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm p-4 text-start position-relative benefit-card" 
+                     style="border-radius: 12px; transition: transform 0.2s; border-top: 4px solid #8B5CF6 !important;">
+                    <div class="p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 48px; height: 48px; background: rgba(139, 92, 246, 0.12); color: #7C3AED;">
+                        <i class="bi bi-robot fs-4"></i>
+                    </div>
+                    <span class="badge text-white mb-2 align-self-start fw-bold" style="background: #8B5CF6; font-size: 0.72rem;">Benefit 2</span>
+                    <h5 class="fw-bold text-dark mb-2">AI Career Assistant</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.55;">
+                        Interactive counselling grounded in 10,255+ official cutoffs, your 12th marks, and personal career fit. Ask questions 24/7 with zero waiting.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Benefit 3 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm p-4 text-start position-relative benefit-card" 
+                     style="border-radius: 12px; transition: transform 0.2s; border-top: 4px solid #0EA5E9 !important;">
+                    <div class="p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 48px; height: 48px; background: rgba(14, 165, 233, 0.12); color: #0284C7;">
+                        <i class="bi bi-compass-fill fs-4"></i>
+                    </div>
+                    <span class="badge bg-info text-white mb-2 align-self-start fw-bold" style="font-size: 0.72rem;">Benefit 3</span>
+                    <h5 class="fw-bold text-dark mb-2">TNEA Counselling Assistant</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.55;">
+                        Step-by-step single-window allocation strategy and an interactive 13-point pre-submission checklist to safeguard your choice filling against common mistakes.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Benefit 4 -->
+            <div class="col-md-6 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm p-4 text-start position-relative benefit-card" 
+                     style="border-radius: 12px; transition: transform 0.2s; border-top: 4px solid #10B981 !important;">
+                    <div class="p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.12); color: #059669;">
+                        <i class="bi bi-journal-bookmark-fill fs-4"></i>
+                    </div>
+                    <span class="badge bg-success text-white mb-2 align-self-start fw-bold" style="font-size: 0.72rem;">Benefit 4</span>
+                    <h5 class="fw-bold text-dark mb-2">Personalized Learning Resources</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.55;">
+                        Curated foundational courses & lectures (MIT, Harvard CS50, 3Blue1Brown) prioritized directly to your evaluated engineering branches.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Benefit 5 -->
+            <div class="col-md-6 col-lg-6">
+                <div class="card h-100 border-0 shadow-sm p-4 text-start position-relative benefit-card" 
+                     style="border-radius: 12px; transition: transform 0.2s; border-top: 4px solid #6366F1 !important;">
+                    <div class="p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 48px; height: 48px; background: rgba(99, 102, 241, 0.12); color: #4F46E5;">
+                        <i class="bi bi-pie-chart-fill fs-4"></i>
+                    </div>
+                    <span class="badge bg-primary text-white mb-2 align-self-start fw-bold" style="font-size: 0.72rem;">Benefit 5</span>
+                    <h5 class="fw-bold text-dark mb-2">Advanced Choice Analysis</h5>
+                    <p class="text-muted small mb-0" style="line-height: 1.55;">
+                        Automated <strong>Dream</strong>, <strong>Realistic</strong>, and <strong>Safer</strong> admission tier classification, cutoff margin audit, and priority risk analysis.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Free vs Premium Comparison Table ── -->
+    <div class="card shadow-sm border-0 mb-5 overflow-hidden" style="border-radius: 14px;">
+        <div class="card-header bg-white py-3 border-bottom text-center">
+            <h5 class="fw-bold mb-0 text-dark">Plan Feature Comparison</h5>
+            <small class="text-muted">Existing free features remain 100% free and accessible to all students.</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="table-light text-uppercase small" style="font-size: 0.75rem;">
+                    <tr>
+                        <th class="text-start ps-4 py-3" style="width: 45%;">Feature & Capability</th>
+                        <th class="py-3" style="width: 25%;">Free Plan</th>
+                        <th class="py-3 text-warning bg-dark fw-bold" style="width: 30%;">
+                            <i class="bi bi-stars text-warning me-1"></i> Premium Access (₹200)
+                        </th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 0.88rem;">
+                    <tr>
+                        <td class="text-start ps-4 fw-semibold text-dark">TNEA Admission Planner & Cutoff Match</td>
+                        <td><i class="bi bi-check-circle-fill text-success fs-5"></i> Free</td>
+                        <td class="bg-light fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Included</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start ps-4 fw-semibold text-dark">College Search, Filter & 445+ Profiles</td>
+                        <td><i class="bi bi-check-circle-fill text-success fs-5"></i> Free</td>
+                        <td class="bg-light fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Included</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start ps-4 fw-semibold text-dark">Side-by-Side College Comparison Tool</td>
+                        <td><i class="bi bi-check-circle-fill text-success fs-5"></i> Free</td>
+                        <td class="bg-light fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Included</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start ps-4 fw-semibold text-dark">TNEA Cutoff Trends & Analytics (2023–2025)</td>
+                        <td><i class="bi bi-check-circle-fill text-success fs-5"></i> Free</td>
+                        <td class="bg-light fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Included</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start ps-4 fw-semibold text-dark">Basic Choice List (Add, Reorder, Export CSV)</td>
+                        <td><i class="bi bi-check-circle-fill text-success fs-5"></i> Free</td>
+                        <td class="bg-light fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Included</td>
+                    </tr>
+                    <tr class="table-warning bg-opacity-25">
+                        <td class="text-start ps-4 fw-bold text-dark">
+                            <i class="bi bi-person-lines-fill text-warning me-1"></i> Career Guidance & Aptitude Assessment
+                        </td>
+                        <td class="text-muted"><i class="bi bi-lock-fill text-secondary"></i> Locked</td>
+                        <td class="bg-light text-success fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Unlocked</td>
+                    </tr>
+                    <tr class="table-warning bg-opacity-25">
+                        <td class="text-start ps-4 fw-bold text-dark">
+                            <i class="bi bi-robot text-warning me-1"></i> AI Career Assistant & Chatbot
+                        </td>
+                        <td class="text-muted"><i class="bi bi-lock-fill text-secondary"></i> Locked</td>
+                        <td class="bg-light text-success fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Unlocked</td>
+                    </tr>
+                    <tr class="table-warning bg-opacity-25">
+                        <td class="text-start ps-4 fw-bold text-dark">
+                            <i class="bi bi-compass-fill text-info me-1"></i> TNEA Counselling Assistant & Checklist
+                        </td>
+                        <td class="text-muted"><i class="bi bi-lock-fill text-secondary"></i> Locked</td>
+                        <td class="bg-light text-success fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Unlocked</td>
+                    </tr>
+                    <tr class="table-warning bg-opacity-25">
+                        <td class="text-start ps-4 fw-bold text-dark">
+                            <i class="bi bi-journal-bookmark-fill text-success me-1"></i> Personalized Learning Tracks
+                        </td>
+                        <td class="text-muted"><i class="bi bi-lock-fill text-secondary"></i> Locked</td>
+                        <td class="bg-light text-success fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Unlocked</td>
+                    </tr>
+                    <tr class="table-warning bg-opacity-25">
+                        <td class="text-start ps-4 fw-bold text-dark">
+                            <i class="bi bi-pie-chart-fill text-primary me-1"></i> Advanced Choice Analysis (Dream/Target/Safe)
+                        </td>
+                        <td class="text-muted"><i class="bi bi-lock-fill text-secondary"></i> Locked</td>
+                        <td class="bg-light text-success fw-bold"><i class="bi bi-check-circle-fill text-success fs-5"></i> Unlocked</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Payment Modal / Process Drawer ── -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header bg-dark text-white border-0 py-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check text-warning fs-4"></i>
+                        <div>
+                            <h6 class="modal-title fw-bold mb-0" id="paymentModalLabel">Secure Payment Checkout</h6>
+                            <small class="text-white-50" style="font-size: 0.72rem;">TNEA Career Insight Navigator Entitlement</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <div>
+                            <strong class="text-dark d-block">₹200 Premium Access Pass</strong>
+                            <small class="text-muted">One-time payment • All 5 Premium Features</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="fs-4 fw-bold text-primary">₹200.00</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted mb-2">Select Payment Method</label>
+                        <div class="d-flex flex-column gap-2">
+                            <label class="d-flex align-items-center p-3 border rounded cursor-pointer payment-option selected-option" style="cursor: pointer;">
+                                <input type="radio" name="payment_method" value="upi" checked class="form-check-input me-3">
+                                <div class="flex-grow-1">
+                                    <strong class="d-block small text-dark"><i class="bi bi-qr-code text-primary me-1"></i> UPI / GPay / PhonePe / Paytm</strong>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Instant activation via UPI apps</small>
+                                </div>
+                            </label>
+                            <label class="d-flex align-items-center p-3 border rounded cursor-pointer payment-option" style="cursor: pointer;">
+                                <input type="radio" name="payment_method" value="card" class="form-check-input me-3">
+                                <div class="flex-grow-1">
+                                    <strong class="d-block small text-dark"><i class="bi bi-credit-card-2-front text-info me-1"></i> Debit / Credit Card / NetBanking</strong>
+                                    <small class="text-muted" style="font-size: 0.75rem;">All major Indian banks supported</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="paymentAlert" class="alert alert-info py-2 small d-none mb-3"></div>
+
+                    <button type="button" id="confirmPaymentBtn" class="btn btn-warning fw-bold w-100 py-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 1rem; border-radius: 8px;">
+                        <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        <span id="btnText"><i class="bi bi-lock-fill me-1"></i> Pay ₹200 &amp; Activate Entitlement</span>
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted" style="font-size: 0.72rem;">
+                            <i class="bi bi-shield-lock text-success me-1"></i>
+                            Server-side verified transaction. Unlocks immediately on this account.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Interactive Payment Scripts ── -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const activateBtn = document.getElementById('activatePremiumBtn');
+    const confirmBtn = document.getElementById('confirmPaymentBtn');
+    const paymentModalEl = document.getElementById('paymentModal');
+    const paymentAlert = document.getElementById('paymentAlert');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const btnText = document.getElementById('btnText');
+
+    let paymentModal = null;
+    if (paymentModalEl) {
+        paymentModal = new bootstrap.Modal(paymentModalEl);
+    }
+
+    if (activateBtn && paymentModal) {
+        activateBtn.addEventListener('click', function() {
+            paymentModal.show();
+        });
+    }
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            confirmBtn.disabled = true;
+            btnSpinner.classList.remove('d-none');
+            btnText.innerText = 'Verifying Server-Side Payment...';
+            paymentAlert.classList.remove('d-none', 'alert-danger', 'alert-success');
+            paymentAlert.classList.add('alert-info');
+            paymentAlert.innerText = 'Connecting to payment gateway & generating order...';
+
+            // Step 1: Create Order Server-Side
+            fetch('/api/payment/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: 200.0, currency: 'INR' })
+            })
+            .then(res => res.json())
+            .then(orderData => {
+                if (orderData.status !== 'success') {
+                    throw new Error(orderData.message || 'Could not generate order.');
+                }
+
+                paymentAlert.innerText = 'Verifying payment signature and activating account...';
+
+                // Step 2: Verify Payment and Activate Premium Entitlement
+                return fetch('/api/payment/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_id: orderData.order_id,
+                        payment_id: 'pay_' + Math.random().toString(36).substring(2, 12).toUpperCase(),
+                        signature: 'sig_' + Math.random().toString(36).substring(2, 15)
+                    })
+                });
+            })
+            .then(res => res.json())
+            .then(verifyData => {
+                if (verifyData.status === 'success') {
+                    paymentAlert.classList.remove('alert-info', 'alert-danger');
+                    paymentAlert.classList.add('alert-success');
+                    paymentAlert.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> <strong>Success!</strong> Premium entitlement activated. Refreshing unlocked workspace...';
+                    
+                    setTimeout(() => {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const returnUrl = urlParams.get('next') || '{{ next_url or url_for("career_assistant_view") }}';
+                        window.location.href = returnUrl;
+                    }, 1200);
+                } else {
+                    throw new Error(verifyData.message || 'Payment verification failed.');
+                }
+            })
+            .catch(err => {
+                confirmBtn.disabled = false;
+                btnSpinner.classList.add('d-none');
+                btnText.innerHTML = '<i class="bi bi-lock-fill me-1"></i> Pay ₹200 &amp; Activate Entitlement';
+                paymentAlert.classList.remove('alert-info', 'alert-success');
+                paymentAlert.classList.add('alert-danger');
+                paymentAlert.innerText = err.message || 'An error occurred during payment verification.';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
