@@ -21,6 +21,7 @@ import os
 import re
 import json
 import logging
+from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
 
@@ -1249,6 +1250,11 @@ def generate_dynamic_general_response(
     if q_lower in ["bye", "goodbye", "see you", "see ya", "cya", "exit", "quit"]:
         return "Goodbye! Best wishes with your learning and future journey. Feel free to come back anytime."
 
+    # Date & Time Inquiries
+    if any(k in q_lower for k in ["today's date", "todays date", "what is the date", "what's the date", "current date", "what day is today", "what day is it", "today date", "which date is today"]):
+        now = datetime.now()
+        return f"Today's date is **{now.strftime('%B %d, %Y')}** ({now.strftime('%A')})."
+
     # Website Features & Navigation Guidance
     if any(k in q_lower for k in ["what features do i have", "what features are available", "what tools are available", "features do i have", "where can i compare colleges", "where can i see my assessment", "where can i find", "how to compare colleges"]):
         if "compare" in q_lower:
@@ -1664,7 +1670,9 @@ def call_openai_career_assistant(
     proactive_rag = retrieve_relevant_context(user_message, top_k=2, score_threshold=0.25)
     rag_context_str = format_rag_context_for_llm(proactive_rag) if proactive_rag else ""
 
-    augmented_system_prompt = system_prompt
+    now = datetime.now()
+    current_date_str = now.strftime("%A, %B %d, %Y")
+    augmented_system_prompt = f"{system_prompt}\n\n[REAL-TIME CONTEXT: Today's current date is {current_date_str}. Always use this accurate current date if asked about the date, current year, or today's timeline.]"
     if rag_context_str:
         augmented_system_prompt += f"\n\n{rag_context_str}"
 
@@ -1687,7 +1695,7 @@ def call_openai_career_assistant(
             base_url=provider_config.get("base_url"),
             timeout=provider_config.get("timeout", 25.0)
         )
-        model = provider_config.get("model", "gpt-4o-mini")
+        model = provider_config.get("model", "gemini-3.8-flash")
 
         working_messages = list(messages)
         max_tool_iterations = 4
@@ -1707,24 +1715,10 @@ def call_openai_career_assistant(
 
             choice = response.choices[0]
             response_msg = choice.message
+            actual_model = getattr(response, "model", model)
 
             if response_msg.tool_calls:
-                tool_calls_dict = []
-                for tc in response_msg.tool_calls:
-                    tool_calls_dict.append({
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments
-                        }
-                    })
-
-                working_messages.append({
-                    "role": "assistant",
-                    "content": response_msg.content or None,
-                    "tool_calls": tool_calls_dict
-                })
+                working_messages.append(response_msg)
 
                 for tc in response_msg.tool_calls:
                     func_name = tc.function.name
@@ -1733,7 +1727,7 @@ def call_openai_career_assistant(
                     except Exception:
                         args = {}
 
-                    logger.info(f"Tool call requested: {func_name}")
+                    logger.info(f"Tool call requested: {func_name} (runtime model: {actual_model})")
 
                     tool_result = execute_backend_tool(
                         tool_name=func_name,
@@ -1749,6 +1743,7 @@ def call_openai_career_assistant(
                         "content": json.dumps(tool_result, ensure_ascii=False)
                     })
             elif response_msg.content:
+                logger.info(f"Chat completion generated using runtime model: {actual_model}")
                 return response_msg.content.strip()
             else:
                 break

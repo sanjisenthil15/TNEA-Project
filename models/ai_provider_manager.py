@@ -33,59 +33,89 @@ COOLDOWN_SECONDS = 180  # 3 minutes cooldown for failed providers
 def _get_configured_providers() -> List[Dict[str, Any]]:
     """
     Builds the ranked list of active AI providers from environment variables.
+    Supports dual Google Gemini API keys with automatic quota failover
+    and latest high-availability model cascading.
     Never exposes API keys in logs or errors.
     """
     providers: List[Dict[str, Any]] = []
 
-    # Provider 1: Primary OpenAI
-    p1_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("AI_API_KEY")
-    p1_model = os.environ.get("OPENAI_MODEL") or os.environ.get("AI_MODEL") or "gpt-4o-mini"
-    p1_base = os.environ.get("OPENAI_BASE_URL")
+    # -------------------------------------------------------------
+    # Key 1: Primary Gemini API Key
+    # -------------------------------------------------------------
+    k1 = (
+        os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or os.environ.get("AI_API_KEY")
+    )
+    k1_model = os.environ.get("OPENAI_MODEL") or os.environ.get("GEMINI_MODEL") or os.environ.get("AI_MODEL") or "gemini-3.8-flash"
+    k1_base = os.environ.get("OPENAI_BASE_URL") or os.environ.get("AI_BASE_URL")
 
-    if p1_key and str(p1_key).strip():
+    if k1 and str(k1).strip():
+        k1_str = str(k1).strip()
+        is_gemini_1 = k1_str.startswith("AQ.") or k1_str.startswith("AIza") or ("generativelanguage" in str(k1_base or "")) or bool(os.environ.get("GEMINI_API_KEY"))
+        if is_gemini_1 and not k1_base:
+            k1_base = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
         providers.append({
-            "id": "primary_openai",
-            "name": "OpenAI Primary",
-            "api_key": p1_key.strip(),
-            "model": p1_model.strip(),
-            "base_url": p1_base.strip() if p1_base else None,
+            "id": "gemini_key1_primary",
+            "name": f"Google Gemini Key-1 ({k1_model})",
+            "api_key": k1_str,
+            "model": k1_model.strip(),
+            "base_url": k1_base.strip() if k1_base else None,
             "timeout": 25.0
         })
 
-    # Provider 2: Secondary / Fallback Provider
-    p2_key = (
-        os.environ.get("FALLBACK_AI_API_KEY")
+        if is_gemini_1:
+            fb_model_name = os.environ.get("FALLBACK_AI_MODEL") or "gemini-3.5-flash-lite"
+            for fb_m in [fb_model_name]:
+                if fb_m != k1_model:
+                    providers.append({
+                        "id": f"gemini_key1_fallback_{fb_m}",
+                        "name": f"Google Gemini Key-1 Fallback ({fb_m})",
+                        "api_key": k1_str,
+                        "model": fb_m,
+                        "base_url": k1_base.strip() if k1_base else "https://generativelanguage.googleapis.com/v1beta/openai/",
+                        "timeout": 25.0
+                    })
+
+    # -------------------------------------------------------------
+    # Key 2: Secondary Gemini API Key (Automatic Quota Failover)
+    # -------------------------------------------------------------
+    k2 = (
+        os.environ.get("GEMINI_API_KEY_2")
+        or os.environ.get("FALLBACK_AI_API_KEY")
         or os.environ.get("OPENAI_API_KEY_2")
         or os.environ.get("AI_API_KEY_2")
-        or (p1_key if os.environ.get("FALLBACK_AI_MODEL") else None)
     )
-    p2_model = os.environ.get("FALLBACK_AI_MODEL") or "gpt-4o"
-    p2_base = os.environ.get("FALLBACK_AI_BASE_URL") or os.environ.get("OPENAI_BASE_URL_2")
+    k2_model = os.environ.get("FALLBACK_AI_MODEL") or "gemini-3.5-flash-lite"
+    k2_base = os.environ.get("FALLBACK_AI_BASE_URL") or os.environ.get("OPENAI_BASE_URL_2") or k1_base
 
-    if p2_key and str(p2_key).strip() and (p2_key != p1_key or p2_model != p1_model or p2_base != p1_base):
+    if k2 and str(k2).strip() and str(k2).strip() != str(k1 or "").strip():
+        k2_str = str(k2).strip()
+        is_gemini_2 = k2_str.startswith("AQ.") or k2_str.startswith("AIza") or ("generativelanguage" in str(k2_base or "")) or bool(os.environ.get("GEMINI_API_KEY_2"))
+        if is_gemini_2 and not k2_base:
+            k2_base = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
         providers.append({
-            "id": "fallback_provider_1",
-            "name": f"Fallback Provider ({p2_model})",
-            "api_key": p2_key.strip(),
-            "model": p2_model.strip(),
-            "base_url": p2_base.strip() if p2_base else None,
-            "timeout": 30.0
+            "id": "gemini_key2_primary",
+            "name": f"Google Gemini Key-2 ({k1_model})",
+            "api_key": k2_str,
+            "model": k1_model.strip(),
+            "base_url": k2_base.strip() if k2_base else None,
+            "timeout": 25.0
         })
 
-    # Provider 3: Tertiary Provider (Optional additional backup)
-    p3_key = os.environ.get("FALLBACK_AI_API_KEY_2") or os.environ.get("OPENAI_API_KEY_3")
-    p3_model = os.environ.get("FALLBACK_AI_MODEL_2") or "gpt-3.5-turbo"
-    p3_base = os.environ.get("FALLBACK_AI_BASE_URL_2")
-
-    if p3_key and str(p3_key).strip():
-        providers.append({
-            "id": "fallback_provider_2",
-            "name": f"Tertiary Provider ({p3_model})",
-            "api_key": p3_key.strip(),
-            "model": p3_model.strip(),
-            "base_url": p3_base.strip() if p3_base else None,
-            "timeout": 30.0
-        })
+        if is_gemini_2:
+            for fb_m in [k2_model]:
+                if fb_m != k1_model:
+                    providers.append({
+                        "id": f"gemini_key2_fallback_{fb_m}",
+                        "name": f"Google Gemini Key-2 Fallback ({fb_m})",
+                        "api_key": k2_str,
+                        "model": fb_m,
+                        "base_url": k2_base.strip() if k2_base else "https://generativelanguage.googleapis.com/v1beta/openai/",
+                        "timeout": 25.0
+                    })
 
     return providers
 

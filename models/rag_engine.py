@@ -112,16 +112,18 @@ class PersistentSemanticEmbeddingFunction(chromadb.EmbeddingFunction):
 def get_embedding_function():
     """
     Returns the configured embedding function:
-    1. OpenAIEmbeddingFunction (text-embedding-3-small) if OPENAI_API_KEY is available.
-    2. PersistentSemanticEmbeddingFunction as high-accuracy, zero-network persistent embedding model.
+    1. OpenAIEmbeddingFunction (text-embedding-3-small) if a genuine OpenAI API key is available.
+    2. PersistentSemanticEmbeddingFunction as high-accuracy, zero-latency persistent embedding model.
     Query and documents always use the matching embedding model.
     """
     openai_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("AI_API_KEY")
-    if openai_key and str(openai_key).strip():
+    base_url = os.environ.get("OPENAI_BASE_URL") or ""
+    is_gemini = "generativelanguage" in base_url or (openai_key and (openai_key.startswith("AQ.") or openai_key.startswith("AIza")))
+
+    if openai_key and str(openai_key).strip() and not is_gemini:
         try:
             import chromadb.utils.embedding_functions as ef
             model_name = os.environ.get("OPENAI_EMBEDDING_MODEL") or "text-embedding-3-small"
-            base_url = os.environ.get("OPENAI_BASE_URL")
             return ef.OpenAIEmbeddingFunction(
                 api_key=openai_key.strip(),
                 model_name=model_name,
@@ -131,6 +133,7 @@ def get_embedding_function():
             logger.warning(f"Notice: Using persistent semantic embedding engine: {e}")
 
     return PersistentSemanticEmbeddingFunction()
+
 
 
 # =============================================================
